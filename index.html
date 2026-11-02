@@ -344,12 +344,8 @@ canvas{display:block; width:100%; height:auto}
       <input type="checkbox" id="net-fb" checked><label for="net-fb">Facebook</label>
       <input type="checkbox" id="net-tt"><label for="net-tt">TikTok</label>
     </div>
-    <label>Type de publication</label>
-    <div class="chips" role="radiogroup" aria-label="Type de publication">
-      <input type="radio" name="kind" id="k1" value="post" checked><label for="k1">Publication</label>
-      <input type="radio" name="kind" id="k2" value="carousel"><label for="k2">Carrousel</label>
-      <input type="radio" name="kind" id="k3" value="story"><label for="k3">Story</label>
-      <input type="radio" name="kind" id="k4" value="video"><label for="k4">Vidéo (réel, TikTok)</label>
+    <div class="chips" style="margin-top:14px">
+      <input type="checkbox" id="vidOn"><label for="vidOn">Publier en vidéo (réel)</label>
     </div>
     <p class="hintline" id="kindHint"></p>
     <label>Fond de la photo</label>
@@ -1030,7 +1026,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   let current = {s:null, p:null, r:null};
   let animId = null, view = {net:"ig", slide:0}, cache = {}, videoFile = null, done = {}, buildId = 0;
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const kind = () => radioVal("kind") || "post";
+  const kind = () => ($("vidOn") && $("vidOn").checked) ? "video" : (photos.length > 1 ? "carousel" : "post");
   const nets = () => ["ig","fb","tt"].filter(n => $("net-" + n).checked);
   const specKey = (net, k) => k === "video" ? "video" : net === "tt" ? "ttphoto" : k === "story" ? "story" : "feed";
 
@@ -1221,7 +1217,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function renderTabs(){
     const box = $("tabs"); box.innerHTML = "";
     const sel = nets();
-    box.classList.toggle("hidden", sel.length < 2);
+    box.classList.add("hidden");
     sel.forEach(n => {
       const b = document.createElement("button"); b.type = "button";
       b.textContent = "Aperçu " + NETS[n]; b.setAttribute("aria-pressed", String(view.net === n));
@@ -1293,19 +1289,18 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
   const KIND_HINT = {
     post: "",
-    carousel: "Plusieurs images à faire défiler. Ajoute plusieurs photos à l’étape 2 (la 1re est la couverture) ; la dernière image reprend tes horaires.",
+    carousel: "Carrousel automatique : tes photos défilent, la 1re sert de couverture et la dernière image reprend tes horaires.",
     story: "Visible 24 h : idéal pour les arrivages du jour.",
-    video: "Une seule vidéo de 7 s, au bon format pour les réels Instagram et Facebook et pour TikTok. Ajoute la musique dans l’appli."
+    video: "Une vidéo de 7 s pour les réels Instagram et Facebook et pour TikTok. Ajoute la musique dans l’appli. Décoche pour revenir à la photo."
   };
   async function refresh(){
     if (!current.s) return;
     const sel = nets();
-    if (!sel.includes(view.net)) view.net = sel[0] || "ig";
+    view.net = sel.find(n => n !== "tt") || sel[0] || "ig";
     done = {}; tried = {}; videoFile = null; cache = {}; pub("");
     try { await Promise.all([document.fonts.load('800 96px "Bricolage Grotesque"'), document.fonts.load('700 40px "Atkinson Hyperlegible"')]); } catch(e){}
     const k = kind();
     let hint = KIND_HINT[k];
-    if (k === "carousel" && photos.length < 2) hint = "Pour un vrai carrousel, ajoute plusieurs photos de l’article à l’étape 2 (la 1re sert de couverture), puis régénère.";
     $("kindHint").textContent = hint;
     $("makeVideo").classList.toggle("hidden", k !== "video");
     $("makeVideo").textContent = "Créer la vidéo (7 s)";
@@ -1321,7 +1316,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       pub("Aperçu animé. Crée la vidéo pour pouvoir la publier.");
     }
   }
-  document.querySelectorAll('input[name="kind"]').forEach(r => r.addEventListener("change", () => { view.slide = 0; refresh(); }));
+  $("vidOn").addEventListener("change", () => { view.slide = 0; refresh(); });
   ["ig","fb","tt"].forEach(n => $("net-" + n).addEventListener("change", refresh));
 
   $("makeVideo").onclick = async () => {
