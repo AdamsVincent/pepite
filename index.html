@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pépite">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F4F5F0">
+<title>Pépite, posts prêts à publier · Adams Partners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F5F0; --surface:#FFFFFF; --ink:#1B2A4A; --muted:#5B6782; --line:#D6DAE2;
+  --tag:#FFD23F; --tag-ink:#1B2A4A; --promo:#E4572E; --info:#2E86AB; --ok:#2F8F5B;
+  --field:#FFFFFF;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111827; --surface:#1A2335; --ink:#EEF1F7; --muted:#A3ADC2; --line:#2E3A52;
+    --field:#141C2B; --info:#5BB3D6; --promo:#F07452;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111827; --surface:#1A2335; --ink:#EEF1F7; --muted:#A3ADC2; --line:#2E3A52;
+  --field:#141C2B; --info:#5BB3D6; --promo:#F07452;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.5;
+}
+main{max-width:640px; margin:0 auto; padding:24px 18px 64px}
+h1,h2,h3{font-family:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif; line-height:1.1; margin:0}
+header{padding:12px 0 28px; position:relative}
+.brand{display:flex; align-items:center; gap:16px; margin-bottom:14px}
+.appicon{width:clamp(58px,16vw,76px); height:auto; aspect-ratio:1; border-radius:22%; box-shadow:0 6px 18px rgba(24,14,82,.35); flex:none}
+.by{margin:6px 0 0; font-family:"Bricolage Grotesque",system-ui,sans-serif; font-weight:700; font-size:15px; letter-spacing:.05em; color:#B98A3E}
+.colorpick{display:flex; gap:8px; align-items:center}
+.colorpick input[type=color]{width:48px; height:46px; padding:3px; border:1.5px solid var(--line); border-radius:10px; background:var(--field); flex:none; cursor:pointer}
+.colorpick input[type=text]{flex:1; min-width:0; text-transform:uppercase}
+.wordmark{flex-wrap:wrap; row-gap:4px; font-size:clamp(40px,11vw,64px); font-weight:800; letter-spacing:-.03em; display:flex; align-items:center; gap:14px}
+.wordmark .pin{
+  display:inline-block; background:var(--tag); color:var(--tag-ink); font-size:.32em; font-weight:700;
+  padding:.35em .8em .35em 1.1em; transform:rotate(-6deg); position:relative; letter-spacing:0;
+  clip-path:polygon(14% 0,100% 0,100% 100%,14% 100%,0 50%);
+}
+.byline{display:flex; align-items:center; gap:10px; font-size:14px; color:var(--muted); margin:14px 0 0}
+.byline strong{color:var(--ink)}
+.byline img{height:30px; width:auto}
+.wordmark .pin::before{content:""; position:absolute; left:.45em; top:50%; width:.32em; height:.32em; margin-top:-.16em; border-radius:50%; background:var(--paper)}
+header p{color:var(--muted); margin:10px 0 0; max-width:46ch}
+
+section{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; margin-bottom:18px}
+.step-head{display:flex; align-items:baseline; gap:12px; margin-bottom:14px}
+.step-n{font-family:"Bricolage Grotesque",system-ui,sans-serif; font-weight:800; font-size:15px; width:28px; height:28px; border-radius:50%; background:var(--ink); color:var(--surface); display:grid; place-items:center; flex:none; transform:translateY(4px)}
+.step-head h2{font-size:24px; font-weight:700}
+.step-head .sum{margin-left:auto; font-size:14px; color:var(--muted)}
+button.link{background:none; border:0; color:var(--info); font:inherit; font-size:14px; text-decoration:underline; cursor:pointer; padding:4px}
+
+label{display:block; font-weight:700; font-size:14px; margin:14px 0 6px}
+label .hint{font-weight:400; color:var(--muted)}
+input[type=text],input[type=date],select,textarea{
+  width:100%; font:inherit; color:var(--ink); background:var(--field);
+  border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+}
+textarea{resize:vertical; min-height:70px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.drop:focus-within{outline:3px solid var(--info); outline-offset:2px}
+.row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+@media (max-width:420px){.row{grid-template-columns:1fr}}
+
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chips input{position:absolute; opacity:0; pointer-events:none}
+.chips label{margin:0; font-weight:400; font-size:15px; border:1.5px solid var(--line); border-radius:999px; padding:8px 14px; cursor:pointer; background:var(--field)}
+.chips input:checked + label{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.chips input:focus-visible + label{outline:3px solid var(--info); outline-offset:2px}
+
+.types{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+@media (max-width:520px){.types{grid-template-columns:repeat(2,1fr)}}
+.histbox{margin-top:18px; border-top:1px solid var(--line); padding-top:14px}
+.histbox summary{cursor:pointer; font-weight:700}
+.hist{display:grid; gap:8px; margin-top:12px}
+.hist-item{display:flex; gap:12px; align-items:center; border:1.5px solid var(--line); border-radius:12px; padding:8px; background:var(--field)}
+.hist-item .th{width:56px; height:56px; border-radius:8px; background:var(--paper) center/cover no-repeat; flex:none}
+.hist-item .tx{flex:1; min-width:0; font-size:13.5px; color:var(--muted)}
+.hist-item .tx b{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:15px; color:var(--ink)}
+.hist-item .ac{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+.mini{font:inherit; font-size:13px; font-weight:700; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 10px; cursor:pointer}
+.mini.sold{border-color:#B42318; color:#B42318}
+.types input{position:absolute; opacity:0; pointer-events:none}
+.types label{margin:0; border:1.5px solid var(--line); border-radius:12px; padding:12px 8px; text-align:center; cursor:pointer; background:var(--field)}
+.types label b{display:block; font-family:"Bricolage Grotesque",system-ui,sans-serif; font-size:17px}
+.types label span{font-weight:400; font-size:12.5px; color:var(--muted)}
+.types input:checked + label{border-color:var(--c); box-shadow:inset 0 0 0 2px var(--c)}
+.types input:focus-visible + label{outline:3px solid var(--info); outline-offset:2px}
+
+.drop{display:flex; gap:14px; align-items:center; border:2px dashed var(--line); border-radius:14px; padding:14px; cursor:pointer; position:relative}
+.drop input{position:absolute; inset:0; opacity:0; cursor:pointer}
+.drop .thumb{width:72px; height:72px; border-radius:10px; background:var(--paper) center/cover no-repeat; flex:none; display:grid; place-items:center; color:var(--muted); font-size:28px}
+.drop p{margin:0; font-size:14px; color:var(--muted)}
+.drop strong{color:var(--ink); display:block; font-size:15px}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; font:inherit; font-weight:700;
+  border:0; border-radius:12px; padding:13px 18px; cursor:pointer; background:var(--ink); color:var(--surface);
+}
+.btn.big{width:100%; font-size:17px; margin-top:18px; padding:15px}
+.btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line)}
+.btn:disabled{opacity:.55; cursor:progress}
+.actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+.actions .btn{flex:1 1 160px}
+
+.status{font-size:14px; color:var(--muted); margin-top:10px; min-height:1.5em}
+.status.err{color:var(--promo)}
+.badge{display:inline-block; font-size:12.5px; padding:3px 9px; border-radius:999px; background:var(--paper); border:1px solid var(--line); color:var(--muted)}
+
+#preview{display:none}
+#preview.on{display:block}
+.canvas-wrap{border-radius:14px; overflow:hidden; border:1px solid var(--line); background:var(--paper)}
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 10px}
+.tabs button{font:inherit; font-size:14px; border:1.5px solid var(--line); background:var(--field); color:var(--ink); border-radius:999px; padding:6px 12px; cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.slidenav{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:10px; font-size:14px; color:var(--muted)}
+.slidenav button{width:42px; height:42px; border-radius:50%; border:1.5px solid var(--line); background:var(--field); color:var(--ink); font-size:22px; line-height:1; cursor:pointer}
+.publist{display:grid; gap:8px; margin-top:16px}
+.pubrow{justify-content:flex-start; gap:12px; text-align:left; width:100%; padding:14px 16px}
+.pubrow .num{width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.2); font-size:14px; flex:none}
+.pubrow.ghost .num{background:var(--paper)}
+.pubrow.done{background:var(--ok); color:#fff}
+.hintline{font-size:14px; color:var(--muted); margin:10px 0 0}
+.hintline:empty{display:none}
+canvas{display:block; width:100%; height:auto}
+.canvas-wrap.tall{max-width:340px; margin:0 auto}
+.btn.wide{flex-basis:100%}
+.meta{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px}
+#caption{min-height:200px; line-height:1.55}
+.note{font-size:13.5px; color:var(--muted); margin:16px 0 0}
+.hidden{display:none !important}
+@media (prefers-reduced-motion: no-preference){
+  #preview.on{animation:pop .35s ease-out}
+  @keyframes pop{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <img class="appicon" src="data:image/jpeg;base64,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" alt="Logo Adams Partners" width="76" height="76">
+      <div>
+        <h1 class="wordmark">Pépite <span class="pin">prêt à poster</span></h1>
+        <p class="by">by Adams Partners</p>
+      </div>
+    </div>
+    <p>Une photo de l’article, trois réglages, et le post est écrit dans le ton du magasin. Pensé pour les commerçants.</p>
+  </header>
+
+  <!-- Étape 1 : paramétrage -->
+  <section id="setup">
+    <div class="step-head">
+      <span class="step-n">1</span>
+      <h2>Le magasin</h2>
+      <span class="sum" id="setupSum"></span>
+    </div>
+    <div id="setupForm">
+      <div class="row">
+        <div>
+          <label for="sName">Nom du magasin</label>
+          <input type="text" id="sName" placeholder="Ex. La Caverne d’Échirolles">
+        </div>
+        <div>
+          <label for="sCity">Ville</label>
+          <input type="text" id="sCity" placeholder="Ex. Échirolles">
+        </div>
+      </div>
+      <label for="sHours">Horaires et adresse <span class="hint">(repris en fin de post)</span></label>
+      <input type="text" id="sHours" placeholder="Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas">
+      <label for="sCode">Code d’accès <span class="hint">(fourni par Adams Partners, il active l’IA)</span></label>
+      <input type="text" id="sCode" autocomplete="off" autocapitalize="characters" placeholder="Ex. BERGERAC-7F3K">
+      <button class="link" id="fetchCfg" type="button">Déjà paramétré par un collègue ? Récupérer les réglages du magasin</button>
+      <label>Ton des publications</label>
+      <div class="chips" role="radiogroup" aria-label="Ton des publications">
+        <input type="radio" name="tone" id="t1" value="chaleureux et proche, on tutoie" checked><label for="t1">Chaleureux, tutoiement</label>
+        <input type="radio" name="tone" id="t2" value="dynamique et enthousiaste, on tutoie"><label for="t2">Dynamique</label>
+        <input type="radio" name="tone" id="t3" value="sobre et professionnel, on vouvoie"><label for="t3">Sobre, vouvoiement</label>
+      </div>
+      <label>Émojis</label>
+      <div class="chips" role="radiogroup" aria-label="Émojis">
+        <input type="radio" name="emoji" id="e1" value="quelques-uns" checked><label for="e1">Quelques-uns</label>
+        <input type="radio" name="emoji" id="e2" value="beaucoup"><label for="e2">Beaucoup</label>
+        <input type="radio" name="emoji" id="e3" value="aucun"><label for="e3">Aucun</label>
+      </div>
+      <div class="row">
+        <div>
+          <label for="sTags">Hashtags fixes</label>
+          <input type="text" id="sTags" placeholder="#secondemain #echirolles">
+        </div>
+        <div>
+          <label for="sColor">Couleur du magasin <span class="hint">(celle de l’enseigne)</span></label>
+          <div class="colorpick">
+            <input type="color" id="sColor" value="#1b2a4a">
+            <input type="text" id="sColorHex" value="#1B2A4A" maxlength="7" aria-label="Code couleur (ex. #1B2A4A)">
+          </div>
+        </div>
+      </div>
+      <label for="sLogo">Logo du magasin <span class="hint">(facultatif, idéalement en PNG)</span></label>
+      <div class="drop">
+        <div class="thumb" id="logoThumb" aria-hidden="true" style="background-size:contain">＋</div>
+        <div><strong id="logoLabel">Ajouter le logo</strong><p>Il remplace le nom du magasin sur les visuels.</p></div>
+        <input type="file" id="sLogo" accept="image/png,image/jpeg,image/webp">
+      </div>
+      <button class="link hidden" id="logoRemove" type="button">Retirer le logo</button>
+      <button class="btn big" id="saveSetup" type="button">Enregistrer le magasin</button>
+      <p class="hintline" id="setupMsg"></p>
+    </div>
+  </section>
+
+  <!-- Étape 2 : le post -->
+  <section id="compose">
+    <div class="step-head">
+      <span class="step-n">2</span>
+      <h2>Le post</h2>
+    </div>
+
+    <div class="types" role="radiogroup" aria-label="Type de post">
+      <input type="radio" name="ptype" id="p1" value="nouveaute" checked><label for="p1" style="--c:var(--ok)"><b>Nouveauté</b><span>un article arrivé</span></label>
+      <input type="radio" name="ptype" id="p2" value="promo"><label for="p2" style="--c:var(--promo)"><b>Promo</b><span>prix cassés</span></label>
+      <input type="radio" name="ptype" id="p3" value="info"><label for="p3" style="--c:var(--info)"><b>Info</b><span>vie du magasin</span></label>
+      <input type="radio" name="ptype" id="p4" value="vendu"><label for="p4" style="--c:#B42318"><b>Vendu !</b><span>ça part vite</span></label>
+    </div>
+
+    <label for="photo">Photo <span class="hint" id="photoHint">(l’article est identifié à partir de la photo)</span></label>
+    <div class="drop">
+      <div class="thumb" id="thumb" aria-hidden="true">＋</div>
+      <div><strong id="photoLabel">Ajouter une photo</strong><p>Bien éclairée, fond dégagé. Plusieurs photos possibles pour un carrousel : la 1re est la principale.</p></div>
+      <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" multiple>
+    </div>
+
+    <!-- Nouveauté -->
+    <div data-for="nouveaute">
+      <label for="nItem">Article <span class="hint">(facultatif, sinon identification automatique)</span></label>
+      <input type="text" id="nItem" placeholder="Ex. Machine à café Delonghi Magnifica">
+      <div class="row">
+        <div>
+          <label for="nPrice">Prix</label>
+          <input type="text" id="nPrice" inputmode="decimal" placeholder="Ex. 89 €">
+        </div>
+        <div>
+          <label for="nState">État</label>
+          <select id="nState">
+            <option>Neuf</option><option>Comme neuf</option><option>Très bon état</option><option selected>Bon état</option><option>État correct</option><option>À réparer</option><option>À rénover</option>
+          </select>
+        </div>
+      </div>
+      <label for="nNote">Précision <span class="hint">(facultatif)</span></label>
+      <input type="text" id="nNote" placeholder="Ex. testée en magasin, garantie 3 mois">
+    </div>
+
+    <!-- Promo -->
+    <div data-for="promo" class="hidden">
+      <label for="prWhat">Ce qui est en promo</label>
+      <input type="text" id="prWhat" placeholder="Ex. bergère en velours, ou tout le rayon vaisselle">
+      <label for="prBase">Prix de base <span class="hint">(facultatif pour une promo sur tout un rayon)</span></label>
+      <input type="text" id="prBase" inputmode="decimal" placeholder="Ex. 79 €">
+      <label>Type de remise</label>
+      <div class="chips" role="radiogroup" aria-label="Type de remise">
+        <input type="radio" name="prMode" id="pm1" value="pct" checked><label for="pm1">En %</label>
+        <input type="radio" name="prMode" id="pm2" value="prix"><label for="pm2">Nouveau prix (prix barré)</label>
+      </div>
+      <div class="row">
+        <div>
+          <label for="prVal" id="prValLabel">Remise en %</label>
+          <input type="text" id="prVal" inputmode="decimal" placeholder="Ex. 30">
+        </div>
+        <div>
+          <label for="prUntil">Jusqu’au</label>
+          <input type="text" id="prUntil" placeholder="Ex. samedi soir">
+        </div>
+      </div>
+      <p class="status" id="prCalc" aria-live="polite"></p>
+    </div>
+
+    <!-- Vendu -->
+    <div data-for="vendu" class="hidden">
+      <label for="vItem">Article vendu</label>
+      <input type="text" id="vItem" placeholder="Ex. bergère en velours rouge">
+      <label for="vDelay">Parti en… <span class="hint">(facultatif)</span></label>
+      <input type="text" id="vDelay" placeholder="Ex. moins de 24 h">
+    </div>
+
+    <!-- Info -->
+    <div data-for="info" class="hidden">
+      <label for="iTopic">Sujet</label>
+      <select id="iTopic">
+        <option>On rachète vos objets</option>
+        <option>Gros arrivage cette semaine</option>
+        <option>Horaires exceptionnels</option>
+        <option>Événement au magasin</option>
+        <option>Recrutement</option>
+        <option>Autre</option>
+      </select>
+      <label for="iDetail">Détails</label>
+      <textarea id="iDetail" placeholder="Ex. rachat cash sur rendez-vous, électroménager et multimédia en priorité"></textarea>
+    </div>
+
+    <button class="btn big" id="generate" type="button">Générer le post</button>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <details class="histbox hidden" id="histBox">
+      <summary>Mes derniers posts (<span id="histCount">0</span>)</summary>
+      <div class="hist" id="hist"></div>
+    </details>
+  </section>
+
+  <!-- Étape 3 : aperçu -->
+  <section id="preview" aria-live="polite">
+    <div class="step-head">
+      <span class="step-n">3</span>
+      <h2>Prêt à publier</h2>
+    </div>
+    <label>Où publier ?</label>
+    <div class="chips" aria-label="Réseaux sociaux">
+      <input type="checkbox" id="net-ig" checked><label for="net-ig">Instagram</label>
+      <input type="checkbox" id="net-fb" checked><label for="net-fb">Facebook</label>
+      <input type="checkbox" id="net-tt"><label for="net-tt">TikTok</label>
+    </div>
+    <label>Type de publication</label>
+    <div class="chips" role="radiogroup" aria-label="Type de publication">
+      <input type="radio" name="kind" id="k1" value="post" checked><label for="k1">Publication</label>
+      <input type="radio" name="kind" id="k2" value="carousel"><label for="k2">Carrousel</label>
+      <input type="radio" name="kind" id="k3" value="story"><label for="k3">Story</label>
+      <input type="radio" name="kind" id="k4" value="video"><label for="k4">Vidéo (réel, TikTok)</label>
+    </div>
+    <p class="hintline" id="kindHint"></p>
+    <label>Fond de la photo</label>
+    <div class="chips" role="radiogroup" aria-label="Fond de la photo">
+      <input type="radio" name="bgm" id="bg0" value="none" checked><label for="bg0">Photo d’origine</label>
+      <input type="radio" name="bgm" id="bg1" value="white"><label for="bg1">Blanc studio</label>
+      <input type="radio" name="bgm" id="bg2" value="wood"><label for="bg2">Bois</label>
+      <input type="radio" name="bgm" id="bg3" value="concrete"><label for="bg3">Béton</label>
+      <input type="radio" name="bgm" id="bg4" value="brand"><label for="bg4">Couleur du magasin</label>
+    </div>
+    <div class="chips" style="margin-top:10px">
+      <input type="checkbox" id="autoLight" checked><label for="autoLight">Lumière auto</label>
+    </div>
+    <p class="hintline" id="bgHint"></p>
+    <div class="tabs" id="tabs"></div>
+    <div class="canvas-wrap" id="cvWrap"><canvas id="cv" width="1080" height="1350" role="img" aria-label="Aperçu du visuel"></canvas></div>
+    <div class="slidenav hidden" id="slideNav">
+      <button type="button" id="prevS" aria-label="Image précédente">‹</button>
+      <span id="slideInfo"></span>
+      <button type="button" id="nextS" aria-label="Image suivante">›</button>
+    </div>
+    <div class="meta" id="meta"></div>
+    <label for="caption">Texte du post <span class="hint">(modifiable)</span></label>
+    <textarea id="caption"></textarea>
+    <button class="btn ghost big hidden" id="makeVideo" type="button">Créer la vidéo (7 s)</button>
+    <div class="publist" id="pubList"></div>
+    <div class="actions">
+      <button class="btn ghost" id="copy" type="button">Copier le texte</button>
+      <button class="btn ghost" id="dl" type="button" disabled>Télécharger</button>
+    </div>
+    <div class="status" id="pubStatus" role="status" aria-live="polite"></div>
+    <p class="note">Publie réseau par réseau, dans l’ordre : après chaque envoi, reviens ici, le suivant est prêt. Le texte est copié à chaque fois.<br>Astuce : dans Instagram, active « Partager aussi sur Facebook » pour publier sur les deux d’un coup.</p>
+    <p class="note">Le prix et l’état sont toujours ceux saisis par le magasin, jamais inventés. Relis avant de publier.</p>
+  </section>
+  <p class="note" style="text-align:center">Solution imaginée et proposée par Adams Partners<br><a href="https://adamspartners.fr" target="_blank" rel="noopener" style="color:inherit">adamspartners.fr</a></p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const TYPE_LABEL = {nouveaute:"Nouveauté", promo:"Promo", info:"Info magasin", vendu:"Vendu !"};
+  const TYPE_COLOR = {nouveaute:"#2F8F5B", promo:"#E4572E", info:"#2E86AB", vendu:"#B42318"};
+
+  // ---------- Paramétrage ----------
+  $("sColor").addEventListener("input", () => { $("sColorHex").value = $("sColor").value.toUpperCase(); });
+  $("sColorHex").addEventListener("input", () => {
+    const v = $("sColorHex").value.trim();
+    if (/^#?[0-9a-f]{6}$/i.test(v)) $("sColor").value = (v[0] === "#" ? v : "#" + v).toLowerCase();
+  });
+
+  const radioVal = (name) => (document.querySelector(`input[name="${name}"]:checked`) || {}).value;
+  const setRadio = (name, val) => { const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(val)}"]`); if (el) el.checked = true; };
+
+  let store = null;
+  let logoData = null, logoImg = null;
+  function setLogo(data){
+    logoData = data; logoImg = null;
+    $("logoThumb").style.backgroundImage = data ? `url(${data})` : "";
+    $("logoThumb").textContent = data ? "" : "＋";
+    $("logoLabel").textContent = data ? "Logo ajouté · changer" : "Ajouter le logo";
+    $("logoRemove").classList.toggle("hidden", !data);
+    if (data){ const im = new Image(); im.onload = () => { logoImg = im; try { if (current.s) refresh(); } catch(e){} }; im.src = data; }
+  }
+  $("sLogo").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const im = new Image();
+    im.onload = () => {
+      const r = Math.min(1, 400 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      setLogo(c.toDataURL("image/png"));
+    };
+    im.src = URL.createObjectURL(f);
+  });
+  $("logoRemove").onclick = () => setLogo(null);
+
+  function readSetup(){
+    return {
+      name: $("sName").value.trim(),
+      city: $("sCity").value.trim(),
+      hours: $("sHours").value.trim(),
+      code: $("sCode").value.trim(),
+      tone: radioVal("tone"),
+      emoji: radioVal("emoji"),
+      tags: $("sTags").value.trim(),
+      color: $("sColor").value,
+      logo: logoData
+    };
+  }
+  function fillSetup(s){
+    $("sName").value = s.name || ""; $("sCity").value = s.city || ""; $("sHours").value = s.hours || ""; $("sCode").value = s.code || "";
+    $("sTags").value = s.tags || ""; if (s.tone) setRadio("tone", s.tone); if (s.emoji) setRadio("emoji", s.emoji);
+    setLogo(s.logo || null);
+    if (s.color && /^#[0-9a-f]{6}$/i.test(s.color)) { $("sColor").value = s.color.toLowerCase(); $("sColorHex").value = s.color.toUpperCase(); }
+  }
+  function collapseSetup(){
+    $("setupForm").classList.add("hidden");
+    $("setupSum").innerHTML = "";
+    const span = document.createElement("span");
+    span.textContent = store.name + (store.city ? ", " + store.city : "") + " ";
+    const b = document.createElement("button");
+    b.className = "link"; b.type = "button"; b.textContent = "Modifier";
+    b.onclick = () => { $("setupForm").classList.remove("hidden"); $("setupSum").innerHTML = ""; $("sName").focus(); };
+    $("setupSum").append(span, b);
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem("arrivage-store") || "null");
+    if (saved && saved.name) { store = saved; fillSetup(saved); collapseSetup(); }
+  } catch (e) {}
+
+  $("saveSetup").onclick = () => {
+    const s = readSetup();
+    if (!s.name) { $("sName").focus(); $("sName").setAttribute("aria-invalid","true"); return; }
+    $("sName").removeAttribute("aria-invalid");
+    store = s;
+    try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
+    collapseSetup();
+    shareConfig(s);
+    $("compose").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+  };
+
+  // ---------- Réglages partagés par toute l'équipe du magasin ----------
+  // Tous les vendeurs d'un magasin utilisent le même code : les réglages sont gardés en ligne, sans limite d'utilisateurs.
+  async function relayCall(payload){
+    if (!relayReady()) throw new Error("relais non configuré");
+    const r = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(d.error || "erreur"), {status: r.status});
+    return d;
+  }
+  async function shareConfig(s){
+    if (!s.code || !relayReady()) return;
+    const {code, ...config} = s;
+    try { await relayCall({action:"saveConfig", code, config}); $("setupMsg").textContent = "Réglages partagés : tes collègues les récupèrent avec le même code."; }
+    catch (e) { $("setupMsg").textContent = e.status === 401 ? "Code d’accès invalide : les réglages restent sur ce téléphone." : "Réglages gardés sur ce téléphone (partage indisponible pour l’instant)."; }
+  }
+  async function pullConfig(code, silent){
+    try {
+      const d = await relayCall({action:"getConfig", code});
+      if (!d.config){ if (!silent) $("setupMsg").textContent = "Aucun réglage enregistré pour ce code : renseigne-les puis enregistre."; return false; }
+      const s = Object.assign({}, d.config, {code});
+      store = s; fillSetup(s);
+      try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
+      collapseSetup(); if (!silent) $("setupMsg").textContent = "Réglages du magasin récupérés.";
+      return true;
+    } catch (e) {
+      if (!silent) $("setupMsg").textContent = e.status === 401 ? "Code d’accès invalide." : "Impossible de récupérer les réglages pour l’instant.";
+      return false;
+    }
+  }
+  $("fetchCfg").onclick = () => { const c = $("sCode").value.trim(); if (!c){ $("sCode").focus(); $("setupMsg").textContent = "Saisis d’abord le code du magasin."; return; } pullConfig(c, false); };
+  setTimeout(() => { if (store && store.code) pullConfig(store.code, true); }, 0);
+
+  // ---------- Type de post ----------
+  function applyType(){
+    const t = radioVal("ptype");
+    document.querySelectorAll("[data-for]").forEach(el => el.classList.toggle("hidden", el.dataset.for !== t));
+    $("photoHint").textContent = t === "nouveaute" ? "(l’article est identifié à partir de la photo)" : t === "vendu" ? "(la photo de l’article vendu)" : "(facultatif)";
+  }
+  document.querySelectorAll('input[name="ptype"]').forEach(r => r.addEventListener("change", applyType));
+  applyType();
+
+  // ---------- Photo ----------
+  let photos = [], photoBlob = null, photoImg = null;
+  $("photo").addEventListener("change", async (e) => {
+    const list = Array.from(e.target.files || []).slice(0, 10);
+    if (!list.length) return;
+    try {
+      const out = [];
+      for (const f of list){ const img = await loadImage(f); out.push({img, blob: await downscale(img, 1280), enh: autoEnhance(img)}); }
+      photos = out; photoImg = out[0].img; photoBlob = out[0].blob;
+      $("thumb").style.backgroundImage = `url(${URL.createObjectURL(photoBlob)})`; $("thumb").textContent = "";
+      $("photoLabel").textContent = out.length > 1 ? `${out.length} photos ajoutées · changer` : "Photo ajoutée · changer";
+      if (bgMode() !== "none") applyBackground(); else if (current.s) refresh();
+    } catch (err) {
+      setStatus("Une photo n’a pas pu être lue. Essaie des JPEG ou des PNG.", true);
+    }
+  });
+  function loadImage(file){
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img); img.onerror = rej;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  function downscale(img, max){
+    const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return new Promise(res => c.toBlob(b => res(b), "image/jpeg", 0.85));
+  }
+
+  // ---------- IA via le relais ----------
+  // Remplace cette adresse par celle de ton Worker Cloudflare (voir le guide).
+  const RELAY_URL = "https://pepite.throbbing-glade-a7b3.workers.dev";
+  const relayReady = () => RELAY_URL && !/TON-SOUS-DOMAINE/.test(RELAY_URL);
+
+  async function askRelay(prompt, code){
+    let image = null;
+    if (photoBlob) image = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej;
+      r.readAsDataURL(photoBlob);
+    });
+    const resp = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({code, prompt, image})});
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok){
+      if (data.error === "quota") throw new Error(`Quota du mois atteint (${data.limite || 150} posts) : il repart à zéro le 1er du mois prochain. Texte créé avec les modèles de base.`);
+      const msgs = {401:"Code d’accès invalide : vérifie-le à l’étape 1.", 429:"Trop de demandes d’affilée, réessaie dans une minute."};
+      throw new Error((msgs[resp.status] || "La génération par IA n’a pas abouti.") + " Texte créé avec les modèles de base.");
+    }
+    return data;
+  }
+
+  function setStatus(msg, err){ $("status").textContent = msg; $("status").classList.toggle("err", !!err); }
+
+  const num = (v) => { const n = parseFloat(String(v).replace(",", ".").replace(/[^0-9.]/g, "")); return isFinite(n) ? n : null; };
+  const euro = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ",")) + " €";
+  function computePromo(){
+    const mode = radioVal("prMode") || "pct";
+    const base = num($("prBase").value), val = num($("prVal").value);
+    let pct = null, newPrice = null, err = "";
+    if (mode === "pct"){
+      if (val !== null){
+        if (val <= 0 || val >= 100) err = "La remise doit être comprise entre 1 et 99 %.";
+        else { pct = Math.round(val); if (base !== null) newPrice = Math.round(base * (1 - val / 100) * 100) / 100; }
+      }
+    } else if (val !== null){
+      newPrice = val;
+      if (base !== null){
+        if (val >= base) err = "Le nouveau prix doit être inférieur au prix de base.";
+        else pct = Math.round((1 - val / base) * 100);
+      }
+    }
+    return {
+      mode, err, base, pct, newPrice,
+      tag: newPrice !== null ? euro(newPrice) : (pct !== null ? "-" + pct + " %" : ""),
+      oldTag: newPrice !== null && base !== null ? euro(base) : "",
+      pctTag: newPrice !== null && pct !== null ? "-" + pct + " %" : ""
+    };
+  }
+  function updatePromoUI(){
+    const pct = (radioVal("prMode") || "pct") === "pct";
+    $("prValLabel").textContent = pct ? "Remise en %" : "Nouveau prix";
+    $("prVal").placeholder = pct ? "Ex. 30" : "Ex. 49 €";
+    const c = computePromo();
+    $("prCalc").classList.toggle("err", !!c.err);
+    $("prCalc").textContent = c.err || (c.base !== null && c.newPrice !== null && c.pct !== null ? `${euro(c.base)} → ${euro(c.newPrice)}, soit -${c.pct} %` : "");
+  }
+  document.querySelectorAll('input[name="prMode"]').forEach(r => r.addEventListener("change", () => { $("prVal").value = ""; updatePromoUI(); }));
+  ["prBase","prVal"].forEach(id => $(id).addEventListener("input", updatePromoUI));
+
+  function collectPost(){
+    const t = radioVal("ptype");
+    if (t === "nouveaute") return {type:t, item:$("nItem").value.trim(), price:$("nPrice").value.trim(), state:$("nState").value, note:$("nNote").value.trim()};
+    if (t === "promo") return Object.assign({type:t, what:$("prWhat").value.trim(), until:$("prUntil").value.trim()}, computePromo());
+    if (t === "vendu") return {type:t, item:$("vItem").value.trim(), delay:$("vDelay").value.trim()};
+    return {type:t, topic:$("iTopic").value, detail:$("iDetail").value.trim()};
+  }
+
+  function buildPrompt(s, p){
+    const typeDesc = {
+      nouveaute: `Post « nouveauté » : présenter UN article qui vient d’arriver en magasin. Article saisi par le magasin : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer en magasin)"}. État : ${p.state}. Précision : ${p.note || "aucune"}.`,
+      promo: `Post « promo ». Ce qui est en promo : ${p.what || "(non précisé)"}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. Jusqu’au : ${p.until || "(non précisé)"}. Utilise exactement ces montants, n’en calcule pas d’autres.`,
+      vendu: `Post « vendu » : annoncer qu’un article a trouvé preneur, pour montrer que les bonnes affaires partent vite et donner envie de passer vite pour les prochaines. Article : ${p.item || "(non saisi, identifie-le sur la photo)"}. Parti en : ${p.delay || "(non précisé, n’invente pas de délai)"}. Remercie l’acheteur sans le nommer et annonce que d’autres bonnes affaires arrivent. Accroche courte et festive.`,
+      info: `Post « info magasin ». Sujet : ${p.topic}. Détails : ${p.detail || "aucun"}.`
+    }[p.type];
+    return `Tu écris des publications Facebook/Instagram pour un magasin de seconde main indépendant (dépôt-vente, achat-vente d’occasion).
+
+Magasin : ${s.name}${s.city ? ", " + s.city : ""}.
+Ton : ${s.tone}. Émojis : ${s.emoji}.
+Horaires et adresse à rappeler en fin de post : ${s.hours || "(non fournis, n’en invente pas)"}.
+Hashtags fixes du magasin : ${s.tags || "(aucun)"}.
+
+${typeDesc}
+${photoBlob ? "Une photo est jointe : c’est la photo prise par le magasin." : "Pas de photo jointe."}
+
+Règles :
+- N’invente jamais de prix, de défaut, de garantie, de marque ou de date qui ne sont pas donnés ou clairement visibles sur la photo.
+- Si tu identifies l’article sur la photo, nomme-le précisément (type, et marque/modèle seulement si visible). Si tu n’es pas sûr, reste générique et mets la confiance à « faible ».
+- Valorise la bonne affaire et le réemploi, sans culpabiliser.
+- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (passer en magasin, réserver par message).
+- Termine par les horaires/adresse s’ils sont fournis.
+- Propose au maximum 5 hashtags pertinents au total, en comptant les hashtags fixes du magasin.
+
+- Écris toujours les prix avec le symbole €, par exemple « 59 € ».
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"]}`;
+  }
+
+  // ---------- Mode démo sans IA ----------
+  function fallback(s, p){
+    const tu = /tutoie/.test(s.tone);
+    const em = s.emoji === "aucun" ? (x)=>"" : (x)=>x;
+    const end = s.hours ? `\n\n${em("📍 ")}${s.hours}` : "";
+    let article, accroche, texte;
+    if (p.type === "nouveaute"){
+      article = p.item || "Nouvel article";
+      accroche = p.item ? p.item.split(" ").slice(0,4).join(" ") : "Tout juste arrivé";
+      texte = `${em("✨ ")}Nouveauté chez ${s.name} !\n${article}${p.state ? ", " + p.state.toLowerCase() : ""}${p.price ? ", à " + normPrice(p.price) : ""}.\n${p.note ? p.note.charAt(0).toUpperCase()+p.note.slice(1)+".\n" : ""}Pièce unique : ${tu ? "passe vite la voir ou réserve-la par message" : "passez vite la voir ou réservez-la par message"}${em(" 👀")}${end}`;
+    } else if (p.type === "promo"){
+      article = p.what || "Promo";
+      accroche = (p.pct !== null ? "-" + p.pct + " % " : "") + (p.what ? p.what.split(" ").slice(0,3).join(" ") : "en magasin");
+      texte = `${em("🔥 ")}Prix cassés chez ${s.name} !\n${p.newPrice !== null ? (p.what || "Sélection") + " à " + euro(p.newPrice) + (p.base !== null ? " au lieu de " + euro(p.base) : "") + (p.pct !== null ? " (-" + p.pct + " %)" : "") : (p.pct !== null ? "-" + p.pct + " %" : "Remise") + " sur " + (p.what || "une sélection d’articles")}${p.until ? ", jusqu’à " + p.until : ""}.\nLes bonnes affaires ne restent jamais longtemps : ${tu ? "viens en profiter" : "venez en profiter"}${em(" 🏃")}${end}`;
+    } else if (p.type === "vendu"){
+      article = p.item || "Article vendu";
+      accroche = "Déjà parti !";
+      texte = `${em("🎉 ")}Vendu${p.delay ? " en " + p.delay : ""} !\n${p.item ? p.item.charAt(0).toUpperCase() + p.item.slice(1) : "Cet article"} a trouvé son nouveau propriétaire, merci !\nD’autres bonnes affaires arrivent chaque jour chez ${s.name} : ${tu ? "passe vite avant qu’elles partent" : "passez vite avant qu’elles partent"}${em(" 🏃")}${end}`;
+    } else {
+      article = p.topic;
+      accroche = p.topic;
+      texte = `${em("📣 ")}${p.topic}\n${p.detail || ""}\n${tu ? "Une question ? Écris-nous en message" : "Une question ? Écrivez-nous en message"}${em(" 💬")}${end}`;
+    }
+    const tags = [s.city ? "#" + s.city.toLowerCase().replace(/[^a-zà-ÿ0-9]/g,"") : "", "#secondemain", "#bonnesaffaires", "#reemploi"].filter(Boolean);
+    return {article, confiance:"démo", accroche, texte, hashtags:tags};
+  }
+
+  // ---------- Génération ----------
+  let busy = false;
+  $("generate").onclick = async () => {
+    if (busy) return;
+    if (!store) { store = readSetup(); if (!store.name) { setStatus("Renseigne d’abord le nom du magasin (étape 1).", true); $("sName").focus(); return; } }
+    const p = collectPost();
+    if (p.type === "nouveaute" && !photoBlob && !p.item) { setStatus("Ajoute une photo ou le nom de l’article.", true); return; }
+    if (p.type === "vendu" && !photoBlob && !p.item) { setStatus("Ajoute la photo ou le nom de l’article vendu.", true); return; }
+    if (p.type === "promo" && p.err) { setStatus(p.err, true); return; }
+    if (p.type === "promo" && (!p.what || !p.tag)) { setStatus("Indique ce qui est en promo et la remise (en % ou en nouveau prix).", true); return; }
+
+    busy = true; $("generate").disabled = true;
+    let result = null, mode = "ia";
+    const relayOn = relayReady() && store.code;
+    if (relayOn) {
+      setStatus(photoBlob ? "Identification de l’article et rédaction en cours…" : "Rédaction en cours…");
+      try { result = await askRelay(buildPrompt(store, p), store.code); }
+      catch (e) { setStatus(e.message || "La génération par IA n’a pas abouti : texte créé avec les modèles de base.", true); result = null; }
+    }
+    if (!result || !result.texte) { result = fallback(store, p); mode = "demo"; if (!relayOn) setStatus("Mode démo : saisis ton code d’accès à l’étape 1 pour activer l’IA."); }
+    else setStatus("");
+
+    current = {s:store, p, r:result};
+    const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(result.hashtags || [])])).slice(0, 5);
+    $("caption").value = result.texte.trim() + "\n\n" + tags.join(" ");
+    const meta = $("meta"); meta.innerHTML = "";
+    const add = (t) => { const s = document.createElement("span"); s.className = "badge"; s.textContent = t; meta.append(s); };
+    add(TYPE_LABEL[p.type]);
+    if (result.article) add("Article : " + result.article);
+    if (mode === "ia" && result.confiance) add("Identification : " + result.confiance);
+    if (mode === "ia" && typeof result.restant === "number") add(result.restant + (result.restant > 1 ? " posts restants ce mois-ci" : " post restant ce mois-ci"));
+    if (mode === "demo") add("Mode démo");
+    $("preview").classList.add("on");
+    await refresh();
+    addHist(p, result, $("caption").value);
+    $("preview").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+    busy = false; $("generate").disabled = false;
+  };
+
+  // ---------- Historique (gardé sur ce téléphone) ----------
+  const HKEY = "arrivage-historique";
+  const loadHist = () => { try { return JSON.parse(localStorage.getItem(HKEY) || "[]"); } catch(e){ return []; } };
+  function saveHist(list){
+    while (list.length){ try { localStorage.setItem(HKEY, JSON.stringify(list)); return; } catch(e){ list.pop(); } }
+    try { localStorage.removeItem(HKEY); } catch(e){}
+  }
+  function thumbData(img, max){
+    const r = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.8);
+  }
+  function addHist(p, r, caption){
+    const list = loadHist();
+    list.unshift({id: Date.now(), date: new Date().toISOString(), p, r, caption, photo: photos[0] ? thumbData(photos[0].img, 900) : null});
+    saveHist(list.slice(0, 20)); renderHist();
+  }
+  const imgFromData = (d) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = d; });
+  async function setPhotoFromData(d){
+    if (!d){ photos = []; photoImg = null; photoBlob = null; $("thumb").style.backgroundImage = ""; $("thumb").textContent = "＋"; $("photoLabel").textContent = "Ajouter une photo"; return; }
+    const img = await imgFromData(d), blob = await downscale(img, 1280);
+    photos = [{img, blob, enh: autoEnhance(img)}]; photoImg = img; photoBlob = blob;
+    $("thumb").style.backgroundImage = `url(${d})`; $("thumb").textContent = "";
+    $("photoLabel").textContent = "Photo reprise de l’historique · changer";
+  }
+  function setMeta(items){
+    const meta = $("meta"); meta.innerHTML = "";
+    items.filter(Boolean).forEach(t => { const sp = document.createElement("span"); sp.className = "badge"; sp.textContent = t; meta.append(sp); });
+  }
+  async function reuse(e){
+    if (!store){ setStatus("Renseigne d’abord le magasin (étape 1).", true); return; }
+    await setPhotoFromData(e.photo);
+    current = {s:store, p:e.p, r:e.r};
+    $("caption").value = e.caption;
+    setMeta([TYPE_LABEL[e.p.type], e.r.article ? "Article : " + e.r.article : "", "Republication"]);
+    $("preview").classList.add("on");
+    await refresh();
+    $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
+  }
+  async function markSold(e){
+    await setPhotoFromData(e.photo);
+    setRadio("ptype", "vendu"); applyType();
+    $("vItem").value = e.r.article || e.p.item || e.p.what || "";
+    const h = (Date.now() - new Date(e.date).getTime()) / 3600000;
+    $("vDelay").value = h < 24 ? "moins de 24 h" : Math.round(h / 24) + (Math.round(h / 24) > 1 ? " jours" : " jour");
+    $("compose").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
+    setStatus("Article repris : vérifie puis génère le post « Vendu ! ».");
+  }
+  function renderHist(){
+    const list = loadHist(), box = $("hist");
+    $("histBox").classList.toggle("hidden", !list.length);
+    $("histCount").textContent = list.length;
+    box.innerHTML = "";
+    list.forEach(e => {
+      const it = document.createElement("div"); it.className = "hist-item";
+      const th = document.createElement("div"); th.className = "th"; if (e.photo) th.style.backgroundImage = `url(${e.photo})`;
+      const tx = document.createElement("div"); tx.className = "tx";
+      const b = document.createElement("b"); b.textContent = (e.r && e.r.article) || TYPE_LABEL[e.p.type];
+      const sp = document.createElement("span"); sp.textContent = TYPE_LABEL[e.p.type] + " · " + new Date(e.date).toLocaleDateString("fr-FR", {day:"numeric", month:"short"});
+      tx.append(b, sp);
+      const ac = document.createElement("div"); ac.className = "ac";
+      const mk = (label, cls, fn, aria) => { const bt = document.createElement("button"); bt.type = "button"; bt.className = "mini" + (cls ? " " + cls : ""); bt.textContent = label; if (aria) bt.setAttribute("aria-label", aria); bt.onclick = fn; ac.append(bt); };
+      mk("Republier", "", () => reuse(e));
+      if (e.p.type !== "vendu" && e.p.type !== "info") mk("Vendu !", "sold", () => markSold(e));
+      mk("×", "", () => { saveHist(loadHist().filter(x => x.id !== e.id)); renderHist(); }, "Supprimer de l’historique");
+      it.append(th, tx, ac); box.append(it);
+    });
+  }
+  renderHist();
+
+  // ---------- Studio photo : lumière auto, détourage, fonds ----------
+  const ORT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.wasm.bundle.min.mjs";
+  const SEGCONF = {model: "u2netp.onnx", wasm: null, packed: false};
+  const srcW = (s) => s.naturalWidth || s.width, srcH = (s) => s.naturalHeight || s.height;
+  const autoOn = () => { const el = $("autoLight"); return !el || el.checked; };
+  const bgMode = () => radioVal("bgm") || "none";
+
+  // Retouche automatique : niveaux, balance des blancs douce, exposition, légère saturation
+  function autoEnhance(img){
+    const r = Math.min(1, 2000 / Math.max(srcW(img), srcH(img)));
+    const W = Math.round(srcW(img) * r), H = Math.round(srcH(img) * r);
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d", {willReadFrequently: true}); g.drawImage(img, 0, 0, W, H);
+    const s = document.createElement("canvas"); const sr = Math.min(1, 160 / Math.max(W, H));
+    s.width = Math.max(1, Math.round(W * sr)); s.height = Math.max(1, Math.round(H * sr));
+    const sg = s.getContext("2d", {willReadFrequently: true}); sg.drawImage(c, 0, 0, s.width, s.height);
+    const d = sg.getImageData(0, 0, s.width, s.height).data;
+    const hist = new Uint32Array(256); let mr = 0, mg = 0, mb = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4){ const L = Math.round(.2126*d[i] + .7152*d[i+1] + .0722*d[i+2]); hist[L]++; mr += d[i]; mg += d[i+1]; mb += d[i+2]; n++; }
+    const pct = (p) => { let acc = 0; for (let v = 0; v < 256; v++){ acc += hist[v]; if (acc >= p * n) return v; } return 255; };
+    let lo = pct(0.005), hi = pct(0.995);
+    if (hi - lo < 60){ lo = Math.max(0, lo - 10); hi = Math.min(255, hi + 10); }
+    const k = Math.min(1.6, 255 / Math.max(1, hi - lo));
+    mr /= n; mg /= n; mb /= n; const avg = (mr + mg + mb) / 3;
+    const wb = [mr, mg, mb].map(m => 1 + (Math.min(1.1, Math.max(0.9, avg / Math.max(1, m))) - 1) * 0.5);
+    let meanL = 0; for (let v = 0; v < 256; v++) meanL += hist[v] * Math.min(1, Math.max(0, (v - lo) * k / 255));
+    meanL /= n;
+    let gamma = Math.log(0.5) / Math.log(Math.min(0.95, Math.max(0.05, meanL)));
+    gamma = 1 + (Math.min(1.35, Math.max(0.75, gamma)) - 1) * 0.6;
+    const lut = [0, 1, 2].map(ch => { const t = new Uint8ClampedArray(256); for (let v = 0; v < 256; v++){ const x = Math.min(1, Math.max(0, (v * wb[ch] - lo) * k / 255)); t[v] = Math.round(255 * Math.pow(x, 1 / gamma)); } return t; });
+    const id = g.getImageData(0, 0, W, H), p = id.data;
+    for (let i = 0; i < p.length; i += 4){
+      let R = lut[0][p[i]], G = lut[1][p[i+1]], B = lut[2][p[i+2]];
+      const L = .299*R + .587*G + .114*B;
+      p[i] = L + (R - L) * 1.08; p[i+1] = L + (G - L) * 1.08; p[i+2] = L + (B - L) * 1.08;
+    }
+    g.putImageData(id, 0, 0);
+    return c;
+  }
+  const photoSrc = (ph) => (autoOn() && ph.enh) ? ph.enh : ph.img;
+
+  // Chargement du module de détourage (une seule fois)
+  const SEG = {ready: null, ort: null, session: null};
+  async function fetchBytes(url, packed){
+    const res = await fetch(url); if (!res.ok) throw new Error("fichier " + res.status);
+    if (!packed) return new Uint8Array(await res.arrayBuffer());
+    const txt = (await res.text()).trim(); const bin = atob(txt); const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    const out = new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip")));
+    return new Uint8Array(await out.arrayBuffer());
+  }
+  function loadSegmenter(){
+    if (SEG.ready) return SEG.ready;
+    SEG.ready = (async () => {
+      const ort = await import(ORT_URL);
+      ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
+      if (SEGCONF.wasm) ort.env.wasm.wasmBinary = await fetchBytes(SEGCONF.wasm, SEGCONF.packed);
+      else ort.env.wasm.wasmPaths = ORT_URL.replace(/[^/]+$/, "");
+      const model = await fetchBytes(SEGCONF.model, SEGCONF.packed);
+      SEG.session = await ort.InferenceSession.create(model, {executionProviders: ["wasm"]});
+      SEG.ort = ort;
+    })();
+    SEG.ready.catch(() => { SEG.ready = null; });
+    return SEG.ready;
+  }
+  // Masque de l'article (calculé une fois par photo)
+  async function computeMask(ph){
+    if (ph.mask) return ph.mask;
+    await loadSegmenter();
+    const S = 320, c = document.createElement("canvas"); c.width = S; c.height = S;
+    const cx = c.getContext("2d", {willReadFrequently: true}); cx.drawImage(ph.img, 0, 0, S, S);
+    const d = cx.getImageData(0, 0, S, S).data; let mx = 1;
+    for (let i = 0; i < d.length; i += 4) mx = Math.max(mx, d[i], d[i+1], d[i+2]);
+    const mean = [.485, .456, .406], std = [.229, .224, .225], f = new Float32Array(3 * S * S);
+    for (let q = 0; q < S * S; q++) for (let ch = 0; ch < 3; ch++) f[ch * S * S + q] = (d[q * 4 + ch] / mx - mean[ch]) / std[ch];
+    const out = await SEG.session.run({[SEG.session.inputNames[0]]: new SEG.ort.Tensor("float32", f, [1, 3, S, S])});
+    const m = out[SEG.session.outputNames[0]].data; let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < m.length; i++){ if (m[i] < lo) lo = m[i]; if (m[i] > hi) hi = m[i]; }
+    const mc = document.createElement("canvas"); mc.width = S; mc.height = S;
+    const mg = mc.getContext("2d"), md = mg.createImageData(S, S);
+    for (let q = 0; q < S * S; q++){ const a = (m[q] - lo) / ((hi - lo) || 1); md.data[q * 4 + 3] = Math.round(255 * Math.min(1, Math.max(0, (a - 0.06) / 0.88))); }
+    mg.putImageData(md, 0, 0);
+    ph.mask = mc; return mc;
+  }
+  // Article détouré et recadré, selon la version (retouchée ou non)
+  function cutFor(ph){
+    if (!ph.mask) return null;
+    const key = autoOn() ? "enh" : "raw"; ph.cuts = ph.cuts || {};
+    if (ph.cuts[key]) return ph.cuts[key];
+    const src = photoSrc(ph), r = Math.min(1, 1600 / Math.max(srcW(src), srcH(src)));
+    const W = Math.round(srcW(src) * r), H = Math.round(srcH(src) * r);
+    const cc = document.createElement("canvas"); cc.width = W; cc.height = H;
+    const g = cc.getContext("2d", {willReadFrequently: true}); g.imageSmoothingQuality = "high";
+    g.drawImage(src, 0, 0, W, H); g.globalCompositeOperation = "destination-in"; g.drawImage(ph.mask, 0, 0, W, H);
+    const id = g.getImageData(0, 0, W, H).data; let x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2){ if (id[(y * W + x) * 4 + 3] > 40){ if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+    if (x1 <= x0 || y1 <= y0) return null;
+    const tc = document.createElement("canvas"); tc.width = x1 - x0 + 2; tc.height = y1 - y0 + 2;
+    tc.getContext("2d").drawImage(cc, -x0, -y0);
+    ph.cuts[key] = tc; return tc;
+  }
+
+  // Fonds dessinés (mis en cache par taille)
+  const TEX = {};
+  const mixHex = (h, to, a) => { const A = hexRgb(h), B = hexRgb(to); return "rgb(" + A.map((v, i) => Math.round(v + (B[i] - v) * a)).join(",") + ")"; };
+  function noiseLayer(W, H, amount, seed){
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    const id = g.createImageData(W, H); let s = seed || 7;
+    for (let i = 0; i < id.data.length; i += 4){ s = (s * 16807) % 2147483647; const v = (s / 2147483647) * 255; id.data[i] = id.data[i+1] = id.data[i+2] = v; id.data[i+3] = amount; }
+    g.putImageData(id, 0, 0); return c;
+  }
+  function bgTexture(mode, W, H, floorY, brand){
+    const key = [mode, W, H, Math.round(floorY), brand].join("|"); if (TEX[key]) return TEX[key];
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    const horizon = (top, bottom, a) => { const h = g.createLinearGradient(0, floorY - 40, 0, floorY + 60); h.addColorStop(0, top); h.addColorStop(1, bottom); return h; };
+    if (mode === "white"){
+      const w = g.createLinearGradient(0, 0, 0, floorY); w.addColorStop(0, "#ffffff"); w.addColorStop(1, "#f1efec"); g.fillStyle = w; g.fillRect(0, 0, W, floorY);
+      const f = g.createLinearGradient(0, floorY, 0, H); f.addColorStop(0, "#ebe8e3"); f.addColorStop(1, "#dcd8d1"); g.fillStyle = f; g.fillRect(0, floorY, W, H - floorY);
+      g.fillStyle = horizon("rgba(241,239,236,0)", "rgba(241,239,236,.0)"); 
+      const blend = g.createLinearGradient(0, floorY - 30, 0, floorY + 30); blend.addColorStop(0, "rgba(241,239,236,0)"); blend.addColorStop(.5, "rgba(236,233,228,1)"); blend.addColorStop(1, "rgba(235,232,227,0)");
+      g.fillStyle = blend; g.fillRect(0, floorY - 30, W, 60);
+      const glow = g.createRadialGradient(W/2, floorY * .55, 10, W/2, floorY * .55, W * .7); glow.addColorStop(0, "rgba(255,255,255,.9)"); glow.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    } else if (mode === "wood"){
+      const w = g.createLinearGradient(0, 0, 0, floorY); w.addColorStop(0, "#f3eee7"); w.addColorStop(1, "#e4dbcf"); g.fillStyle = w; g.fillRect(0, 0, W, floorY);
+      const f = g.createLinearGradient(0, floorY, 0, H); f.addColorStop(0, "#c99a67"); f.addColorStop(1, "#9c6a40"); g.fillStyle = f; g.fillRect(0, floorY, W, H - floorY);
+      let s = 11; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+      const depth = H - floorY;
+      for (let i = 0; i < 260; i++){
+        const t = rnd(); const y = floorY + Math.pow(t, 1.6) * depth; const amp = 2 + t * 6, len = 300 + rnd() * 700, x0 = rnd() * W - 200;
+        g.beginPath(); g.moveTo(x0, y);
+        for (let x = 0; x <= len; x += 20) g.lineTo(x0 + x, y + Math.sin((x + i * 37) / (60 + rnd() * 40)) * amp * (0.4 + t));
+        g.strokeStyle = rnd() < .5 ? `rgba(110,62,28,${.08 + rnd() * .14})` : `rgba(240,200,150,${.06 + rnd() * .10})`;
+        g.lineWidth = 1 + t * 2.5; g.stroke();
+      }
+      for (let k = 1; k < 6; k++){ const y = floorY + Math.pow(k / 6, 1.6) * depth; g.fillStyle = "rgba(70,38,16,.22)"; g.fillRect(0, y, W, 1.5 + k * .6); }
+      g.fillStyle = "rgba(60,30,10,.25)"; g.fillRect(0, floorY, W, 3);
+      const sh = g.createLinearGradient(0, floorY, 0, floorY + 80); sh.addColorStop(0, "rgba(0,0,0,.12)"); sh.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = sh; g.fillRect(0, floorY, W, 80);
+      g.drawImage(noiseLayer(W, H, 10, 3), 0, 0);
+      const glow = g.createRadialGradient(W/2, floorY * .5, 10, W/2, floorY * .5, W * .75); glow.addColorStop(0, "rgba(255,248,236,.55)"); glow.addColorStop(1, "rgba(255,248,236,0)"); g.fillStyle = glow; g.fillRect(0, 0, W, floorY);
+    } else if (mode === "concrete"){
+      const w = g.createLinearGradient(0, 0, 0, H); w.addColorStop(0, "#cfcdc8"); w.addColorStop(1, "#a9a6a0"); g.fillStyle = w; g.fillRect(0, 0, W, H);
+      let s = 5; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+      for (let i = 0; i < 40; i++){ const x = rnd() * W, y = rnd() * H, r = 80 + rnd() * 320; const bl = g.createRadialGradient(x, y, 0, x, y, r); const dark = rnd() < .5; bl.addColorStop(0, dark ? "rgba(90,88,84,.10)" : "rgba(235,233,228,.12)"); bl.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = bl; g.fillRect(x - r, y - r, r * 2, r * 2); }
+      g.drawImage(noiseLayer(W, H, 26, 9), 0, 0);
+      for (let i = 0; i < 900; i++){ g.fillStyle = `rgba(60,58,55,${.15 + rnd() * .3})`; const r = .6 + rnd() * 1.8; g.beginPath(); g.arc(rnd() * W, rnd() * H, r, 0, Math.PI * 2); g.fill(); }
+      const f = g.createLinearGradient(0, floorY, 0, H); f.addColorStop(0, "rgba(0,0,0,.10)"); f.addColorStop(1, "rgba(0,0,0,.22)"); g.fillStyle = f; g.fillRect(0, floorY, W, H - floorY);
+      g.fillStyle = "rgba(0,0,0,.10)"; g.fillRect(0, floorY, W, 2);
+      const glow = g.createRadialGradient(W/2, floorY * .5, 10, W/2, floorY * .5, W * .7); glow.addColorStop(0, "rgba(255,255,255,.28)"); glow.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    } else {
+      const w = g.createLinearGradient(0, 0, 0, floorY); w.addColorStop(0, mixHex(brand, "#ffffff", .30)); w.addColorStop(1, mixHex(brand, "#ffffff", .08)); g.fillStyle = w; g.fillRect(0, 0, W, floorY);
+      const f = g.createLinearGradient(0, floorY, 0, H); f.addColorStop(0, mixHex(brand, "#000000", .15)); f.addColorStop(1, mixHex(brand, "#000000", .40)); g.fillStyle = f; g.fillRect(0, floorY, W, H - floorY);
+      const glow = g.createRadialGradient(W/2, floorY * .55, 10, W/2, floorY * .55, W * .6); glow.addColorStop(0, "rgba(255,255,255,.35)"); glow.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = glow; g.fillRect(0, 0, W, floorY);
+      g.drawImage(noiseLayer(W, H, 8, 4), 0, 0);
+    }
+    TEX[key] = c; return c;
+  }
+  // Mise en scène de l'article détouré sur le fond choisi
+  function drawStudio(x, F, ph, cut, mode, brand, t){
+    const W = F.w, H = F.h, tall = H > 1500;
+    const top = F.top + 110, bottom = H - F.bottom - (tall ? 440 : 330);
+    const floorY = bottom - Math.round((bottom - top) * 0.10);
+    x.drawImage(bgTexture(mode, W, H, floorY, brand), 0, 0);
+    const areaW = W - F.side - F.right, areaH = bottom - top;
+    const z = 1 + 0.06 * Math.min(1, t / DUR);
+    const s = Math.min(areaW * 0.88 / cut.width, areaH / cut.height) * z;
+    const w = cut.width * s, h = cut.height * s, cx = F.side + areaW / 2, by = bottom;
+    x.save(); x.translate(cx, by); x.scale(1, 0.14);
+    const sg = x.createRadialGradient(0, 0, 0, 0, 0, w * 0.55); sg.addColorStop(0, "rgba(0,0,0,.38)"); sg.addColorStop(.6, "rgba(0,0,0,.12)"); sg.addColorStop(1, "rgba(0,0,0,0)");
+    x.fillStyle = sg; x.beginPath(); x.arc(0, 0, w * 0.55, 0, Math.PI * 2); x.fill(); x.restore();
+    x.drawImage(cut, cx - w / 2, by - h, w, h);
+    const g = x.createLinearGradient(0, H * 0.58, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.62)");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    if (tall){ const g2 = x.createLinearGradient(0, 0, 0, F.top + 160); g2.addColorStop(0, "rgba(0,0,0,.25)"); g2.addColorStop(1, "rgba(0,0,0,0)"); x.fillStyle = g2; x.fillRect(0, 0, W, F.top + 160); }
+  }
+  // Détourer toutes les photos du post puis rafraîchir
+  async function applyBackground(){
+    const mode = bgMode();
+    try { localStorage.setItem("pepite-bg", mode); localStorage.setItem("pepite-auto", autoOn() ? "1" : "0"); } catch(e){}
+    if (mode === "none" || !photos.length){ $("bgHint").textContent = ""; if (current.s) refresh(); return; }
+    const first = !SEG.session;
+    $("bgHint").textContent = first ? "Préparation du détourage (la première fois, quelques secondes)…" : "Détourage en cours…";
+    try {
+      for (const ph of photos) await computeMask(ph);
+      $("bgHint").textContent = "Article détouré. Si le résultat n’est pas net, reviens sur « Photo d’origine ».";
+    } catch (e) {
+      console.log(e);
+      $("bgHint").textContent = "Le détourage n’a pas pu se lancer ici : la photo d’origine est utilisée.";
+      const r0 = document.querySelector('input[name="bgm"][value="none"]'); if (r0) r0.checked = true;
+    }
+    if (current.s) refresh();
+  }
+
+  document.querySelectorAll('input[name="bgm"]').forEach(r => r.addEventListener("change", applyBackground));
+  $("autoLight").addEventListener("change", applyBackground);
+  try {
+    const pb = localStorage.getItem("pepite-bg"); if (pb){ const r = document.querySelector(`input[name="bgm"][value="${pb}"]`); if (r) r.checked = true; }
+    if (localStorage.getItem("pepite-auto") === "0") $("autoLight").checked = false;
+  } catch(e){}
+
+  // ---------- Visuel ----------
+  const cv = $("cv"), pctx = cv.getContext("2d");
+  // Zones de sécurité : side = gauche, right = droite (TikTok garde ses boutons à droite)
+  const SPECS = {
+    feed:    {w:1080, h:1350, side:110, right:110, top:90,  bottom:90,  label:"publication"},
+    story:   {w:1080, h:1920, side:80,  right:80,  top:260, bottom:340, label:"story"},
+    ttphoto: {w:1080, h:1920, side:80,  right:190, top:260, bottom:520, label:"tiktok"},
+    video:   {w:1080, h:1920, side:80,  right:190, top:320, bottom:520, label:"video"}
+  };
+  const NETS = {ig:"Instagram", fb:"Facebook", tt:"TikTok"};
+  const DUR = 7;
+  let current = {s:null, p:null, r:null};
+  let animId = null, view = {net:"ig", slide:0}, cache = {}, videoFile = null, done = {}, buildId = 0;
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const kind = () => radioVal("kind") || "post";
+  const nets = () => ["ig","fb","tt"].filter(n => $("net-" + n).checked);
+  const specKey = (net, k) => k === "video" ? "video" : net === "tt" ? "ttphoto" : k === "story" ? "story" : "feed";
+
+  function roundRect(x, l, y, w, h, r){ x.beginPath(); x.moveTo(l+r,y); x.arcTo(l+w,y,l+w,y+h,r); x.arcTo(l+w,y+h,l,y+h,r); x.arcTo(l,y+h,l,y,r); x.arcTo(l,y,l+w,y,r); x.closePath(); }
+  function wrap(x, text, maxW, font){
+    x.font = font; const words = String(text).split(/\s+/); const lines = []; let line = "";
+    for (const w of words){ const t = line ? line + " " + w : w; if (x.measureText(t).width > maxW && line){ lines.push(line); line = w; } else line = t; }
+    if (line) lines.push(line); return lines;
+  }
+  function normPrice(v){ v = v.trim(); return /€/.test(v) ? v.replace(/\s*€/, " €") : v + " €"; }
+  const ease = (v) => { v = Math.max(0, Math.min(1, v)); return 1 - Math.pow(1 - v, 3); };
+  const hexRgb = (h) => { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+  const shade = (h, a) => "rgb(" + hexRgb(h).map(v => Math.round(v * (1 + a))).join(",") + ")";
+  const isLight = (h) => { const [r, g, b] = hexRgb(h); return 0.299*r + 0.587*g + 0.114*b > 165; };
+  const slug = () => (current.s && current.s.name ? current.s.name : "magasin").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+
+  function slides(){
+    const list = [{t:"cover", ph: photos[0] || null}];
+    if (kind() === "carousel"){
+      photos.slice(1).forEach(ph => list.push({t:"photo", ph}));
+      if (current.s && current.s.hours) list.push({t:"infos", ph:null});
+    }
+    return list;
+  }
+
+  function drawBg(x, F, ph, brand, t){
+    const W = F.w, H = F.h;
+    if (ph){
+      const mode = bgMode(), cut = mode !== "none" ? cutFor(ph) : null;
+      if (cut){ drawStudio(x, F, ph, cut, mode, brand, t); return; }
+      const img = photoSrc(ph), iw = srcW(img), ih = srcH(img);
+      const sc = Math.max(W/iw, H/ih) * (1 + 0.10 * Math.min(1, t / DUR));
+      x.drawImage(img, (W-iw*sc)/2, (H-ih*sc)/2, iw*sc, ih*sc);
+      const g = x.createLinearGradient(0, H*0.42, 0, H);
+      g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.75)");
+      x.fillStyle = g; x.fillRect(0,0,W,H);
+      if (H > 1500){ const g2 = x.createLinearGradient(0,0,0,F.top+160); g2.addColorStop(0,"rgba(0,0,0,.35)"); g2.addColorStop(1,"rgba(0,0,0,0)"); x.fillStyle = g2; x.fillRect(0,0,W,F.top+160); }
+    } else {
+      x.fillStyle = brand; x.fillRect(0,0,W,H);
+      for (let i=0;i<14;i++){ x.beginPath(); x.arc(W*0.85, H*0.15, 90+i*90 + (t<DUR ? t*8 : 0), 0, Math.PI*2); x.lineWidth = 2; x.strokeStyle = "rgba(255,255,255,.08)"; x.stroke(); }
+    }
+  }
+  function drawPill(x, l, y, text, color){
+    x.font = '700 40px "Atkinson Hyperlegible", sans-serif';
+    const w = x.measureText(text).width + 60;
+    x.fillStyle = color; roundRect(x, l, y, w, 74, 37); x.fill();
+    x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(text, l + 30, y + 38);
+    x.textBaseline = "alphabetic";
+    return w;
+  }
+  function drawBand(x, F, s, brand, hasImg){
+    const W = F.w, H = F.h;
+    const bandTop = H - F.bottom - 58;
+    const bandH = F.bottom <= 100 ? H - bandTop : 96;
+    x.fillStyle = hasImg ? brand : shade(brand, -0.3);
+    x.fillRect(0, bandTop, W, bandH);
+    x.font = '700 36px "Atkinson Hyperlegible", sans-serif';
+    x.fillStyle = isLight(brand) && hasImg ? "#1B2A4A" : "#fff";
+    x.textBaseline = "middle";
+    const cy = bandTop + Math.min(bandH, 140) / 2;
+    if (s.logo && logoImg){
+      const lh = 64, lw = Math.min(340, logoImg.naturalWidth * lh / logoImg.naturalHeight);
+      const dh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
+      x.save(); x.fillStyle = "#fff"; roundRect(x, F.side, cy - dh/2 - 8, lw + 24, dh + 16, 12); x.fill(); x.restore();
+      x.drawImage(logoImg, F.side + 12, cy - dh/2, lw, dh);
+      if (s.city) x.fillText(s.city, F.side + lw + 48, cy);
+    } else {
+      x.fillText(s.name + (s.city ? " · " + s.city : ""), F.side, cy);
+    }
+    x.textBaseline = "alphabetic";
+  }
+
+  // t en secondes ; 99 = image finale fixe
+  function drawSlide(x, F, slide, idx, total, t){
+    const {s, p, r} = current; if (!s) return;
+    const W = F.w, H = F.h, tall = H > 1500;
+    x.setTransform(1,0,0,1,0,0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over";
+    x.clearRect(0,0,W,H); x.textAlign = "left"; x.shadowBlur = 0;
+    const brand = s.color || "#1B2A4A";
+    const label = TYPE_LABEL[p.type], tcolor = TYPE_COLOR[p.type];
+
+    if (slide.t === "photo"){
+      drawBg(x, F, slide.ph, brand, 99);
+      drawPill(x, F.side, F.top, (idx + 1) + " / " + total, tcolor);
+      drawBand(x, F, s, brand, true);
+      return;
+    }
+    if (slide.t === "infos"){
+      drawBg(x, F, null, brand, 99);
+      const light = isLight(brand), ink = light ? "#1B2A4A" : "#fff";
+      drawPill(x, F.side, F.top, (idx + 1) + " / " + total, tcolor);
+      const tu = /tutoie/.test(s.tone || "");
+      const head = tu ? "On t’attend !" : "On vous attend !";
+      const bodyLines = wrap(x, s.hours, W - F.side - F.right, '700 50px "Atkinson Hyperlegible", sans-serif').slice(0, 6);
+      const bodyH = bodyLines.length * 66;
+      let y = H - F.bottom - 140 - bodyH;
+      x.fillStyle = ink; x.font = '800 104px "Bricolage Grotesque", sans-serif';
+      x.fillText(head, F.side, y - 40);
+      x.font = '700 50px "Atkinson Hyperlegible", sans-serif'; x.globalAlpha = .92;
+      bodyLines.forEach((l, i) => x.fillText(l, F.side, y + 40 + i * 66));
+      x.globalAlpha = 1;
+      drawBand(x, F, s, brand, false);
+      return;
+    }
+
+    // Couverture
+    drawBg(x, F, slide.ph, brand, t);
+    x.globalAlpha = ease((t - 0.2) / 0.4);
+    drawPill(x, F.side, F.top, label, tcolor);
+    if (total > 1){
+      x.font = '700 34px "Atkinson Hyperlegible", sans-serif';
+      const txt = "1 / " + total + "  →", w = x.measureText(txt).width + 44;
+      x.fillStyle = "rgba(0,0,0,.45)"; roundRect(x, W - F.right - w, F.top + 8, w, 58, 29); x.fill();
+      x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(txt, W - F.right - w + 22, F.top + 38); x.textBaseline = "alphabetic";
+    }
+
+    const tagText = p.type === "nouveaute" ? (p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.tag || "") : "";
+    const headFont = '800 96px "Bricolage Grotesque", sans-serif';
+    const maxW = W - F.side - F.right - (!tall && tagText ? 320 : 0);
+    const lines = wrap(x, r.accroche || r.article || label, maxW, headFont).slice(0, 3);
+    const a = ease((t - 0.6) / 0.5), dy = (1 - a) * 60;
+    x.globalAlpha = a; x.fillStyle = (!slide.ph && isLight(brand)) ? "#1B2A4A" : "#fff"; x.font = headFont;
+    const lastY = H - F.bottom - 100;
+    const firstY = lastY - (lines.length - 1) * 100;
+    lines.forEach((l, i) => x.fillText(l, F.side, firstY + i * 100 + dy));
+
+    x.globalAlpha = ease((t - 0.9) / 0.5);
+    drawBand(x, F, s, brand, !!slide.ph);
+
+    if (p.type === "vendu"){
+      const k = (t - 1.0) / 0.45;
+      const sc = k <= 0 ? 0 : k >= 1 ? 1 : ease(k) * (1 + 0.25 * Math.sin(Math.PI * k));
+      if (sc > 0){
+        x.globalAlpha = 1; x.save();
+        x.translate(W / 2, tall ? H * 0.42 : H * 0.40); x.rotate(-0.16); x.scale(sc, sc);
+        const sw = Math.min(W * 0.78, 760), sh = 200;
+        x.fillStyle = "rgba(255,255,255,.9)"; roundRect(x, -sw/2, -sh/2, sw, sh, 24); x.fill();
+        x.lineWidth = 14; x.strokeStyle = "#B42318"; roundRect(x, -sw/2 + 14, -sh/2 + 14, sw - 28, sh - 28, 16); x.stroke();
+        x.fillStyle = "#B42318"; x.textAlign = "center"; x.textBaseline = "middle";
+        x.font = '800 150px "Bricolage Grotesque", sans-serif';
+        x.fillText("VENDU", 0, 8);
+        x.restore(); x.textAlign = "left"; x.textBaseline = "alphabetic";
+      }
+    }
+    if (tagText){
+      const k = (t - 1.4) / 0.45;
+      const scale = k <= 0 ? 0 : k >= 1 ? 1 : ease(k) * (1 + 0.18 * Math.sin(Math.PI * k));
+      if (scale > 0){
+        x.globalAlpha = 1; x.save();
+        const cx = W - F.right - 165;
+        const cy = tall ? firstY - 190 : H - F.bottom - 200;
+        x.translate(cx, cy); x.rotate(-0.12); x.scale(scale, scale);
+        x.font = '800 76px "Bricolage Grotesque", sans-serif';
+        const tw = Math.max(200, x.measureText(tagText).width + 110), th = 130;
+        x.fillStyle = "#FFD23F";
+        x.beginPath(); x.moveTo(-tw/2+40,-th/2); x.lineTo(tw/2,-th/2); x.lineTo(tw/2,th/2); x.lineTo(-tw/2+40,th/2); x.lineTo(-tw/2,0); x.closePath(); x.fill();
+        x.fillStyle = "#1B2A4A"; x.beginPath(); x.arc(-tw/2+34,0,12,0,Math.PI*2); x.fill();
+        x.textAlign = "center"; x.textBaseline = "middle";
+        x.fillText(tagText, 18, 6);
+        if (p.type === "promo" && p.oldTag){
+          x.font = '700 46px "Atkinson Hyperlegible", sans-serif';
+          x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.55)"; x.shadowBlur = 12;
+          const ow = x.measureText(p.oldTag).width, oy = -th/2 - 42;
+          x.fillText(p.oldTag, -25, oy);
+          x.shadowBlur = 0; x.fillStyle = "#E4572E";
+          x.fillRect(-25 - ow/2 - 6, oy - 3, ow + 12, 7);
+        }
+        if (p.type === "promo" && p.pctTag){
+          x.fillStyle = "#E4572E"; x.beginPath(); x.arc(tw/2 - 4, -th/2 - 4, 60, 0, Math.PI*2); x.fill();
+          x.fillStyle = "#fff"; x.font = '800 38px "Bricolage Grotesque", sans-serif';
+          x.fillText(p.pctTag, tw/2 - 4, -th/2 - 2);
+        }
+        x.restore(); x.textAlign = "left";
+      }
+    }
+    x.globalAlpha = 1;
+  }
+
+  // ---------- Aperçu ----------
+  function stopAnim(){ if (animId) cancelAnimationFrame(animId); animId = null; }
+  function playLoop(F, slide){
+    stopAnim();
+    if (reduced()){ drawSlide(pctx, F, slide, 0, 1, 99); return; }
+    const start = performance.now();
+    const step = (now) => { drawSlide(pctx, F, slide, 0, 1, ((now - start) / 1000) % (DUR + 1)); animId = requestAnimationFrame(step); };
+    animId = requestAnimationFrame(step);
+  }
+  function renderTabs(){
+    const box = $("tabs"); box.innerHTML = "";
+    const sel = nets();
+    box.classList.toggle("hidden", sel.length < 2);
+    sel.forEach(n => {
+      const b = document.createElement("button"); b.type = "button";
+      b.textContent = "Aperçu " + NETS[n]; b.setAttribute("aria-pressed", String(view.net === n));
+      b.onclick = () => { view.net = n; renderTabs(); renderPreview(); };
+      box.append(b);
+    });
+  }
+  function renderPreview(){
+    stopAnim();
+    const k = kind(), F = SPECS[specKey(view.net, k)];
+    cv.width = F.w; cv.height = F.h;
+    $("cvWrap").classList.toggle("tall", F.h > 1500);
+    const sl = slides();
+    view.slide = Math.min(view.slide, sl.length - 1);
+    const multi = sl.length > 1 && k === "carousel";
+    $("slideNav").classList.toggle("hidden", !multi);
+    $("slideInfo").textContent = "Image " + (view.slide + 1) + " / " + sl.length;
+    if (k === "video") playLoop(F, sl[0]);
+    else drawSlide(pctx, F, sl[view.slide], view.slide, sl.length, 99);
+  }
+  $("prevS").onclick = () => { const n = slides().length; view.slide = (view.slide - 1 + n) % n; renderPreview(); };
+  $("nextS").onclick = () => { const n = slides().length; view.slide = (view.slide + 1) % n; renderPreview(); };
+
+  // ---------- Fichiers prêts à publier ----------
+  async function buildFiles(){
+    const k = kind(), out = {};
+    if (k === "video") return out;
+    const sl = slides();
+    const keys = [...new Set(nets().map(n => specKey(n, k)))];
+    for (const key of keys){
+      const F = SPECS[key], c = document.createElement("canvas");
+      c.width = F.w; c.height = F.h;
+      const x = c.getContext("2d"), files = [];
+      for (let i = 0; i < sl.length; i++){
+        drawSlide(x, F, sl[i], i, sl.length, 99);
+        const b = await new Promise(res => c.toBlob(res, "image/jpeg", 0.92));
+        files.push(new File([b], `${slug()}-${F.label}${sl.length > 1 ? "-" + (i + 1) : ""}.jpg`, {type:"image/jpeg"}));
+      }
+      out[key] = files;
+    }
+    return out;
+  }
+  const filesFor = (net) => kind() === "video" ? (videoFile ? [videoFile] : null) : (cache[specKey(net, kind())] || null);
+
+  function renderPubList(){
+    const box = $("pubList"); box.innerHTML = "";
+    const sel = nets();
+    if (!sel.length){ const m = document.createElement("p"); m.className = "status err"; m.textContent = "Choisis au moins un réseau."; box.append(m); return; }
+    let nextSet = false;
+    sel.forEach((n, i) => {
+      const isDone = !!done[n];
+      const b = document.createElement("button"); b.type = "button";
+      b.className = "btn pubrow" + (isDone ? " done" : nextSet ? " ghost" : "");
+      if (!isDone) nextSet = true;
+      b.disabled = !filesFor(n);
+      const num = document.createElement("span"); num.className = "num"; num.textContent = isDone ? "✓" : String(i + 1);
+      const lab = document.createElement("span"); lab.textContent = (isDone ? "Publié sur " : "Publier sur ") + NETS[n];
+      b.append(num, lab);
+      b.onclick = () => shareTo(n);
+      box.append(b);
+    });
+  }
+
+  const KIND_HINT = {
+    post: "",
+    carousel: "Plusieurs images à faire défiler. Ajoute plusieurs photos à l’étape 2 (la 1re est la couverture) ; la dernière image reprend tes horaires.",
+    story: "Visible 24 h : idéal pour les arrivages du jour.",
+    video: "Une seule vidéo de 7 s, au bon format pour les réels Instagram et Facebook et pour TikTok. Ajoute la musique dans l’appli."
+  };
+  async function refresh(){
+    if (!current.s) return;
+    const sel = nets();
+    if (!sel.includes(view.net)) view.net = sel[0] || "ig";
+    done = {}; videoFile = null; cache = {}; pub("");
+    try { await Promise.all([document.fonts.load('800 96px "Bricolage Grotesque"'), document.fonts.load('700 40px "Atkinson Hyperlegible"')]); } catch(e){}
+    const k = kind();
+    let hint = KIND_HINT[k];
+    if (k === "carousel" && photos.length < 2) hint = "Pour un vrai carrousel, ajoute plusieurs photos de l’article à l’étape 2 (la 1re sert de couverture), puis régénère.";
+    $("kindHint").textContent = hint;
+    $("makeVideo").classList.toggle("hidden", k !== "video");
+    $("makeVideo").textContent = "Créer la vidéo (7 s)";
+    renderTabs(); renderPreview(); renderPubList();
+    if (k !== "video"){
+      const id = ++buildId;
+      const built = await buildFiles();
+      if (id !== buildId) return;
+      cache = built; renderPubList();
+      $("dl").disabled = !filesFor(view.net);
+    } else {
+      $("dl").disabled = true;
+      pub("Aperçu animé. Crée la vidéo pour pouvoir la publier.");
+    }
+  }
+  document.querySelectorAll('input[name="kind"]').forEach(r => r.addEventListener("change", () => { view.slide = 0; refresh(); }));
+  ["ig","fb","tt"].forEach(n => $("net-" + n).addEventListener("change", refresh));
+
+  $("makeVideo").onclick = async () => {
+    const mime = ["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"]
+      .find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!mime || !cv.captureStream){ pub("Ce navigateur ne sait pas créer de vidéo. Choisis Story ou Publication à la place.", true); return; }
+    const F = SPECS.video, slide = slides()[0];
+    stopAnim(); cv.width = F.w; cv.height = F.h; videoFile = null; renderPubList();
+    $("makeVideo").disabled = true; $("makeVideo").textContent = "Enregistrement de la vidéo…";
+    const chunks = [];
+    const rec = new MediaRecorder(cv.captureStream(30), {mimeType: mime, videoBitsPerSecond: 6000000});
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const ended = new Promise(res => rec.onstop = res);
+    rec.start(250);
+    const start = performance.now();
+    const step = (now) => { const t = (now - start) / 1000; drawSlide(pctx, F, slide, 0, 1, t); if (t < DUR) requestAnimationFrame(step); else rec.stop(); };
+    requestAnimationFrame(step);
+    await ended;
+    const type = mime.split(";")[0], ext = type === "video/mp4" ? "mp4" : "webm";
+    videoFile = new File([new Blob(chunks, {type})], `${slug()}-video.${ext}`, {type});
+    $("makeVideo").disabled = false; $("makeVideo").textContent = "Recréer la vidéo";
+    renderPubList(); $("dl").disabled = false;
+    pub(ext === "mp4"
+      ? "Vidéo prête : la même pour chaque réseau. Publie-la dans l’ordre ci-dessous."
+      : "Vidéo prête (format WebM). Instagram et TikTok préfèrent le MP4 : ouvre cette page sur iPhone ou un Chrome récent pour l’obtenir.");
+    renderPreview();
+  };
+
+  // ---------- Publication ----------
+  const pub = (msg, err) => { $("pubStatus").textContent = msg; $("pubStatus").classList.toggle("err", !!err); };
+  const downloads = { save: async ({filename, data}) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(data); a.download = filename;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }};
+  async function saveFiles(files){
+    if (!downloads){ pub("Le partage direct n’est pas possible depuis cet écran : ouvre la page sur ton téléphone.", true); return false; }
+    for (const f of files){
+      try { await downloads.save({filename: f.name, data: f}); }
+      catch (e) { if (!(e && (e.code === "cancelled" || e.code === "declined"))) pub("Le téléchargement n’a pas abouti.", true); return false; }
+    }
+    return true;
+  }
+  function markDone(net, downloaded){
+    done[net] = true;
+    const rest = nets().filter(n => !done[n]);
+    if (rest.length) view.net = rest[0];
+    renderTabs(); renderPreview(); renderPubList();
+    const next = rest.length ? ` Au tour de ${NETS[rest[0]]} : bouton suivant.` : " Tout est publié, bravo !";
+    pub((downloaded ? `Fichiers téléchargés et texte copié : ajoute-les dans ${NETS[net]}.` : `${NETS[net]} : c’est envoyé, colle le texte en légende s’il n’y est pas.`) + next);
+    const btn = $("pubList").querySelector(".pubrow:not(.done)");
+    if (btn) btn.focus({preventScroll:true});
+  }
+  async function shareTo(net){
+    const files = filesFor(net); if (!files) return;
+    const text = $("caption").value;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    if (navigator.canShare && navigator.canShare({files})){
+      try { await navigator.share({files, text}); markDone(net); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    if (await saveFiles(files)) markDone(net, true);
+  }
+
+  $("copy").onclick = async () => {
+    try { await navigator.clipboard.writeText($("caption").value); $("copy").textContent = "Texte copié"; }
+    catch (e) { $("caption").select(); $("copy").textContent = "Sélectionné, copie-le"; }
+    setTimeout(() => $("copy").textContent = "Copier le texte", 2000);
+  };
+  $("dl").onclick = async () => { const f = filesFor(view.net); if (f) await saveFiles(f); };
+})();
+</script>
+</body>
+</html>
