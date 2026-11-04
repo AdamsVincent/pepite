@@ -110,6 +110,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 
 .drop{display:flex; gap:14px; align-items:center; border:2px dashed var(--line); border-radius:14px; padding:14px; cursor:pointer; position:relative}
 .drop input{position:absolute; inset:0; opacity:0; cursor:pointer}
+.photobtns{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px}
+.pbtn{font-size:15px; padding:12px 8px; text-align:center}
+.vh{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden}
+.streak{font-size:14px; color:var(--muted); margin:-4px 0 14px}
+.tip{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:14px; line-height:1.45; margin-top:16px}
 .drop .thumb{width:72px; height:72px; border-radius:10px; background:var(--paper) center/cover no-repeat; flex:none; display:grid; place-items:center; color:var(--muted); font-size:28px}
 .drop p{margin:0; font-size:14px; color:var(--muted)}
 .drop strong{color:var(--ink); display:block; font-size:15px}
@@ -242,6 +247,7 @@ canvas{display:block; width:100%; height:auto}
       <span class="step-n">2</span>
       <h2>Le post</h2>
     </div>
+    <p class="streak" id="streak"></p>
 
     <div class="types" role="radiogroup" aria-label="Type de post">
       <input type="radio" name="ptype" id="p1" value="nouveaute" checked><label for="p1" style="--c:var(--ok)"><b>Nouveauté</b><span>un article arrivé</span></label>
@@ -251,11 +257,16 @@ canvas{display:block; width:100%; height:auto}
     </div>
 
     <label for="photo">Photo <span class="hint" id="photoHint">(l’article est identifié à partir de la photo)</span></label>
-    <div class="drop">
+    <div class="drop" id="dropZone">
       <div class="thumb" id="thumb" aria-hidden="true">＋</div>
-      <div><strong id="photoLabel">Ajouter une photo</strong><p>Bien éclairée, fond dégagé. Pour un carrousel, sélectionne plusieurs photos d’un coup (20 max), dans l’ordre voulu : la 1re est la principale.</p></div>
-      <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" multiple>
+      <div><strong id="photoLabel">Ajouter une photo</strong><p>Bien éclairée, fond dégagé. Pour un carrousel, choisis plusieurs photos d’un coup dans l’album (20 max), dans l’ordre voulu : la 1re est la principale.</p></div>
     </div>
+    <div class="photobtns">
+      <label class="btn ghost pbtn" for="photoCam">📷 Prendre une photo</label>
+      <label class="btn ghost pbtn" for="photo">🖼️ Choisir dans l’album</label>
+    </div>
+    <input type="file" id="photoCam" accept="image/*" capture="environment" class="vh">
+    <input type="file" id="photo" accept="image/*" multiple class="vh">
 
     <!-- Nouveauté -->
     <div data-for="nouveaute">
@@ -377,13 +388,14 @@ canvas{display:block; width:100%; height:auto}
     <label for="caption">Texte du post <span class="hint">(modifiable)</span></label>
     <textarea id="caption"></textarea>
     <button class="btn ghost big hidden" id="makeVideo" type="button">Créer la vidéo (7 s)</button>
+    <p class="tip">✅ <strong>Avant de publier</strong>, vérifie que tu es sur le <strong>compte du magasin</strong> dans Instagram (appui long sur ta photo de profil pour changer de compte).<br>💡 Active « Partager aussi sur Facebook » : la publication part aussi sur la page du magasin.<br>⤢ Si Instagram recadre la photo en carré, appuie sur l’icône de recadrage en bas à gauche de l’image pour garder le format complet.</p>
     <div class="publist" id="pubList"></div>
     <div class="actions">
       <button class="btn ghost" id="copy" type="button">Copier le texte</button>
       <button class="btn ghost" id="dl" type="button" disabled>Télécharger</button>
     </div>
     <div class="status" id="pubStatus" role="status" aria-live="polite"></div>
-    <p class="note">Publie réseau par réseau, dans l’ordre : après chaque envoi, reviens ici, le suivant est prêt. Le texte est copié à chaque fois.<br>Astuce : dans Instagram, active « Partager aussi sur Facebook » pour publier sur les deux d’un coup.</p>
+    <p class="note">Publie réseau par réseau : après chaque envoi, reviens ici, le suivant est prêt. Le texte est copié à chaque fois.</p>
     <p class="note">Le prix et l’état sont toujours ceux saisis par le magasin, jamais inventés. Relis avant de publier.</p>
   </section>
   <p class="note" style="text-align:center">Solution imaginée et proposée par Adams Partners<br><a href="https://adamspartners.fr" target="_blank" rel="noopener" style="color:inherit">adamspartners.fr</a></p>
@@ -552,8 +564,8 @@ canvas{display:block; width:100%; height:auto}
 
   // ---------- Photo ----------
   let photos = [], photoBlob = null, photoImg = null;
-  $("photo").addEventListener("change", async (e) => {
-    const list = Array.from(e.target.files || []).slice(0, 20);
+  async function handleFiles(input){
+    const list = Array.from(input.files || []).slice(0, 20);
     if (!list.length) return;
     try {
       const out = [];
@@ -562,10 +574,13 @@ canvas{display:block; width:100%; height:auto}
       $("thumb").style.backgroundImage = `url(${URL.createObjectURL(photoBlob)})`; $("thumb").textContent = "";
       $("photoLabel").textContent = out.length > 1 ? `${out.length} photos ajoutées · changer` : "Photo ajoutée · changer";
       if (bgMode() !== "none") applyBackground(); else if (current.s) refresh();
+      if ($("vidOn") && $("vidOn").checked) prepLive();
     } catch (err) {
-      setStatus("Une photo n’a pas pu être lue. Essaie des JPEG ou des PNG.", true);
-    }
-  });
+      setStatus("Une photo n’a pas pu être lue. Essaie une autre photo.", true);
+    } finally { input.value = ""; }
+  }
+  $("photo").addEventListener("change", (e) => handleFiles(e.target));
+  $("photoCam").addEventListener("change", (e) => handleFiles(e.target));
   function loadImage(file){
     return new Promise((res, rej) => {
       const img = new Image();
@@ -675,6 +690,8 @@ Règles :
 - N’invente jamais de prix, de défaut, de garantie, de marque ou de date qui ne sont pas donnés ou clairement visibles sur la photo.
 - Si tu identifies l’article sur la photo, nomme-le précisément (type, et marque/modèle seulement si visible). Si tu n’es pas sûr, reste générique et mets la confiance à « faible ».
 - Valorise la bonne affaire et le réemploi, sans culpabiliser.
+- Dans les deux premières lignes, cite naturellement le type d’article et la ville du magasin (${s.city || "la ville"}) : ce sont les mots que les clients tapent dans la recherche Instagram.
+- Termine le texte, juste avant les horaires, par une question courte et simple qui donne envie de répondre en commentaire, en plus de l’invitation à passer en magasin.
 - 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (passer en magasin, réserver par message).
 - Termine par les horaires/adresse s’ils sont fournis.
 - Propose au maximum 5 hashtags pertinents au total, en comptant les hashtags fixes du magasin.
@@ -708,6 +725,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       accroche = p.topic;
       texte = `${em("📣 ")}${p.topic}\n${p.detail || ""}\n${tu ? "Une question ? Écris-nous en message" : "Une question ? Écrivez-nous en message"}${em(" 💬")}${end}`;
     }
+    const q = p.type === "info" ? (tu ? "Une question ? Pose-la en commentaire 👇" : "Une question ? Posez-la en commentaire 👇") : (tu ? "Tu craques ? Dis-le en commentaire 👇" : "Vous craquez ? Dites-le en commentaire 👇");
+    if (end && texte.endsWith(end)) texte = texte.slice(0, -end.length) + "\n" + q + end; else texte += "\n" + q;
+    if (s.city && !texte.includes(s.city)) texte = texte.replace(s.name, s.name + " à " + s.city);
     const tags = [s.city ? "#" + s.city.toLowerCase().replace(/[^a-zà-ÿ0-9]/g,"") : "", "#secondemain", "#bonnesaffaires", "#reemploi"].filter(Boolean);
     return {article, confiance:"démo", accroche, texte, hashtags:tags};
   }
@@ -800,10 +820,16 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     $("compose").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
     setStatus("Article repris : vérifie puis génère le post « Vendu ! ».");
   }
+  function updateStreak(){
+    const el = $("streak"); if (!el) return;
+    const now = new Date(), day = (now.getDay() + 6) % 7, monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+    const n = loadHist().filter(e => new Date(e.date) >= monday).length;
+    el.textContent = n === 0 ? "🎯 Objectif de la semaine : 3 posts ou plus" : `🔥 ${n} post${n > 1 ? "s" : ""} cette semaine${n >= 3 ? " : bravo, continue comme ça !" : " · objectif : 3 ou plus"}`;
+  }
   function renderHist(){
     const list = loadHist(), box = $("hist");
     $("histBox").classList.toggle("hidden", !list.length);
-    $("histCount").textContent = list.length;
+    $("histCount").textContent = list.length; updateStreak();
     box.innerHTML = "";
     list.forEach(e => {
       const it = document.createElement("div"); it.className = "hist-item";
@@ -1010,6 +1036,67 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     x.fillStyle = g; x.fillRect(0, g0, W, H - g0);
     if (tall){ const g2 = x.createLinearGradient(0, 0, 0, F.top + 160); g2.addColorStop(0, "rgba(0,0,0,.25)"); g2.addColorStop(1, "rgba(0,0,0,0)"); x.fillStyle = g2; x.fillRect(0, 0, W, F.top + 160); }
   }
+  // Photo vivante : l'article détouré s'anime devant son décor (vidéo)
+  async function prepLive(){
+    if (!photos[0] || photos[0].mask) return;
+    $("bgHint").textContent = SEG.session ? "Préparation de la photo vivante…" : "Préparation de la photo vivante (la première fois, quelques secondes)…";
+    try { await computeMask(photos[0]); $("bgHint").textContent = ""; }
+    catch (e) { $("bgHint").textContent = "Photo vivante indisponible ici : la vidéo simple sera utilisée."; }
+    if (current.s) refresh();
+  }
+  function drawLive(x, F, ph, cut, mode, brand, t){
+    const W = F.w, H = F.h, tall = H > 1500, p = Math.max(0, Math.min(1, t / DUR));
+    const top = F.top + (tall ? 90 : 110), bottom = H - F.bottom - 330;
+    if (mode !== "none"){
+      const floorY = bottom - Math.round((bottom - top) * 0.10);
+      x.drawImage(bgTexture(mode, W, H, floorY, brand), 0, 0);
+    } else {
+      const img = photoSrc(ph), iw = srcW(img), ih = srcH(img);
+      const bw = Math.max(8, Math.round(W / 60)), bh = Math.max(8, Math.round(H / 60));
+      if (!ph._blur || ph._blur.width !== bw || ph._blur.height !== bh || ph._blurSrc !== img){
+        const bc = document.createElement("canvas"); bc.width = bw; bc.height = bh;
+        const g = bc.getContext("2d"), s2 = Math.max(bw / iw, bh / ih);
+        g.drawImage(img, (bw - iw * s2) / 2, (bh - ih * s2) / 2, iw * s2, ih * s2);
+        ph._blur = bc; ph._blurSrc = img;
+      }
+      const z = 1.12 - 0.08 * p;
+      x.save(); x.translate(W / 2, H / 2); x.scale(z, z); x.translate(-W / 2, -H / 2);
+      x.imageSmoothingQuality = "high"; x.drawImage(ph._blur, 0, 0, W, H); x.restore();
+      x.fillStyle = "rgba(0,0,0,.38)"; x.fillRect(0, 0, W, H);
+      const v = x.createRadialGradient(W / 2, H * 0.42, W * 0.1, W / 2, H * 0.42, W * 0.85);
+      v.addColorStop(0, "rgba(255,255,255,.10)"); v.addColorStop(1, "rgba(0,0,0,.35)"); x.fillStyle = v; x.fillRect(0, 0, W, H);
+    }
+    const areaW = W - F.side - F.right, areaH = bottom - top;
+    const base = Math.min(areaW * 0.88 / cut.width, areaH / cut.height);
+    const enter = ease(t / 0.7);
+    const sc = base * (0.9 + 0.06 * enter + 0.05 * p);
+    const w = cut.width * sc, h = cut.height * sc, cx = F.side + areaW / 2;
+    const fl = Math.abs(Math.sin(t * 1.7)) * 10 * enter, by = bottom + (1 - enter) * 60;
+    x.save(); x.globalAlpha = enter; x.translate(cx, bottom); x.scale(1, 0.14);
+    const sr = w * 0.55 * (1 - fl / 120);
+    const sg = x.createRadialGradient(0, 0, 0, 0, 0, sr); sg.addColorStop(0, "rgba(0,0,0,.42)"); sg.addColorStop(.6, "rgba(0,0,0,.14)"); sg.addColorStop(1, "rgba(0,0,0,0)");
+    x.fillStyle = sg; x.beginPath(); x.arc(0, 0, sr, 0, Math.PI * 2); x.fill(); x.restore();
+    x.save(); x.globalAlpha = enter; x.translate(cx, by - h / 2 - fl); x.rotate(Math.sin(t * 0.9) * 0.012);
+    x.drawImage(cut, -w / 2, -h / 2, w, h);
+    const sp = (t - 1.3) / 1.3;
+    if (sp > 0 && sp < 1){
+      if (!ph._shine || ph._shine.width !== cut.width || ph._shine.height !== cut.height){ const c2 = document.createElement("canvas"); c2.width = cut.width; c2.height = cut.height; ph._shine = c2; }
+      const sh = ph._shine, g = sh.getContext("2d");
+      g.globalCompositeOperation = "source-over"; g.clearRect(0, 0, sh.width, sh.height); g.drawImage(cut, 0, 0);
+      g.globalCompositeOperation = "source-in";
+      const X = (sp * 1.6 - 0.3) * sh.width, gr = g.createLinearGradient(X - sh.width * 0.18, 0, X + sh.width * 0.18, sh.height * 0.35);
+      gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(.5, "rgba(255,255,255,.6)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, sh.width, sh.height); g.globalCompositeOperation = "source-over";
+      x.globalCompositeOperation = "lighter"; x.globalAlpha = 0.6 * Math.sin(Math.PI * sp);
+      x.drawImage(sh, -w / 2, -h / 2, w, h); x.globalCompositeOperation = "source-over";
+    }
+    x.restore(); x.globalAlpha = 1;
+    const g0 = bottom + 6, gg = x.createLinearGradient(0, g0, 0, H);
+    gg.addColorStop(0, "rgba(0,0,0,0)"); gg.addColorStop(Math.min(.99, 70 / (H - g0)), "rgba(0,0,0,.42)"); gg.addColorStop(1, "rgba(0,0,0,.7)");
+    x.fillStyle = gg; x.fillRect(0, g0, W, H - g0);
+    if (tall){ const g2 = x.createLinearGradient(0, 0, 0, F.top + 160); g2.addColorStop(0, "rgba(0,0,0,.25)"); g2.addColorStop(1, "rgba(0,0,0,0)"); x.fillStyle = g2; x.fillRect(0, 0, W, F.top + 160); }
+  }
+
   // Détourer toutes les photos du post puis rafraîchir
   async function applyBackground(){
     const mode = bgMode();
@@ -1039,7 +1126,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   const cv = $("cv"), pctx = cv.getContext("2d");
   // Zones de sécurité : side = gauche, right = droite (TikTok garde ses boutons à droite)
   const SPECS = {
-    feed:    {w:1080, h:1350, side:110, right:110, top:90,  bottom:90,  label:"publication"},
+    feed:    {w:1080, h:1350, side:110, right:110, top:165, bottom:175, fill:true, label:"publication"},
     story:   {w:1080, h:1920, side:80,  right:80,  top:260, bottom:340, label:"story"},
     ttphoto: {w:1080, h:1920, side:80,  right:190, top:260, bottom:520, label:"tiktok"},
     video:   {w:1080, h:1920, side:80,  right:190, top:320, bottom:520, label:"video"}
@@ -1078,6 +1165,10 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function drawBg(x, F, ph, brand, t){
     const W = F.w, H = F.h;
     if (ph){
+      if (kind() === "video" && t <= DUR + 1){
+        const lc = cutFor(ph);
+        if (lc){ drawLive(x, F, ph, lc, bgMode(), brand, t); return; }
+      }
       const mode = bgMode(), cut = mode !== "none" ? cutFor(ph) : null;
       if (cut){ drawStudio(x, F, ph, cut, mode, brand, t); return; }
       const img = photoSrc(ph), iw = srcW(img), ih = srcH(img);
@@ -1116,13 +1207,13 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function drawBand(x, F, s, brand, hasImg){
     const W = F.w, H = F.h;
     const bandTop = H - F.bottom - 58;
-    const bandH = F.bottom <= 100 ? H - bandTop : 96;
+    const bandH = (F.fill || F.bottom <= 100) ? H - bandTop : 96;
     x.fillStyle = hasImg ? brand : shade(brand, -0.3);
     x.fillRect(0, bandTop, W, bandH);
     x.font = '700 36px "Atkinson Hyperlegible", sans-serif';
     x.fillStyle = isLight(brand) && hasImg ? "#1B2A4A" : "#fff";
     x.textBaseline = "middle";
-    const cy = bandTop + Math.min(bandH, 140) / 2;
+    const cy = bandTop + (F.fill ? 48 : Math.min(bandH, 140) / 2);
     if (s.logo && logoImg){
       const lh = 64, lw = Math.min(340, logoImg.naturalWidth * lh / logoImg.naturalHeight);
       const dh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
@@ -1327,7 +1418,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     post: "",
     carousel: "Carrousel automatique : tes photos défilent, la 1re sert de couverture et la dernière image reprend tes horaires.",
     story: "Visible 24 h : idéal pour les arrivages du jour.",
-    video: "Une vidéo de 7 s pour les réels Instagram et Facebook et pour TikTok. Ajoute la musique dans l’appli. Décoche pour revenir à la photo."
+    video: "Photo vivante : ton article détouré s’anime en vidéo de 7 s, pour les réels Instagram et Facebook et pour TikTok. Ajoute la musique dans l’appli. Décoche pour revenir à la photo."
   };
   async function refresh(){
     if (!current.s) return;
@@ -1352,13 +1443,17 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       pub("Aperçu animé. Crée la vidéo pour pouvoir la publier.");
     }
   }
-  $("vidOn").addEventListener("change", () => { view.slide = 0; refresh(); });
+  $("vidOn").addEventListener("change", () => { view.slide = 0; refresh(); if ($("vidOn").checked) prepLive(); });
   ["ig","fb","tt"].forEach(n => $("net-" + n).addEventListener("change", refresh));
 
   $("makeVideo").onclick = async () => {
     const mime = ["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"]
       .find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
     if (!mime || !cv.captureStream){ pub("Ce navigateur ne sait pas créer de vidéo. Choisis Story ou Publication à la place.", true); return; }
+    if (photos[0] && !photos[0].mask){
+      $("makeVideo").disabled = true; $("makeVideo").textContent = "Préparation de la photo vivante…";
+      try { await computeMask(photos[0]); } catch (e) {}
+    }
     const F = SPECS.video, slide = slides()[0];
     stopAnim(); cv.width = F.w; cv.height = F.h; videoFile = null; renderPubList();
     $("makeVideo").disabled = true; $("makeVideo").textContent = "Enregistrement de la vidéo…";
