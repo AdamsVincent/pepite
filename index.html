@@ -253,7 +253,7 @@ canvas{display:block; width:100%; height:auto}
     <label for="photo">Photo <span class="hint" id="photoHint">(l’article est identifié à partir de la photo)</span></label>
     <div class="drop">
       <div class="thumb" id="thumb" aria-hidden="true">＋</div>
-      <div><strong id="photoLabel">Ajouter une photo</strong><p>Bien éclairée, fond dégagé. Plusieurs photos possibles pour un carrousel : la 1re est la principale.</p></div>
+      <div><strong id="photoLabel">Ajouter une photo</strong><p>Bien éclairée, fond dégagé. Pour un carrousel, sélectionne plusieurs photos d’un coup (20 max), dans l’ordre voulu : la 1re est la principale.</p></div>
       <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" multiple>
     </div>
 
@@ -324,6 +324,12 @@ canvas{display:block; width:100%; height:auto}
       <textarea id="iDetail" placeholder="Ex. rachat cash sur rendez-vous, électroménager et multimédia en priorité"></textarea>
     </div>
 
+    <label>Ton du post</label>
+    <div class="chips" role="radiogroup" aria-label="Ton du post">
+      <input type="radio" name="ptone" id="pt1" value="chaleureux et proche, on tutoie"><label for="pt1">Chaleureux</label>
+      <input type="radio" name="ptone" id="pt2" value="dynamique et enthousiaste, on tutoie"><label for="pt2">Dynamique</label>
+      <input type="radio" name="ptone" id="pt3" value="sobre et professionnel, on vouvoie"><label for="pt3">Sobre</label>
+    </div>
     <button class="btn big" id="generate" type="button">Générer le post</button>
     <div class="status" id="status" role="status" aria-live="polite"></div>
     <details class="histbox hidden" id="histBox">
@@ -460,6 +466,7 @@ canvas{display:block; width:100%; height:auto}
     };
   }
   function fillSetup(s){
+    if (s.tone) { const r = document.querySelector(`input[name="ptone"][value="${s.tone}"]`); if (r) r.checked = true; }
     $("sName").value = s.name || ""; $("sCity").value = s.city || ""; $("sHours").value = s.hours || ""; $("sCode").value = s.code || "";
     $("sTags").value = s.tags || ""; if (s.tone) setRadio("tone", s.tone); if (s.emoji) setRadio("emoji", s.emoji);
     setLogo(s.logo || null);
@@ -488,6 +495,7 @@ canvas{display:block; width:100%; height:auto}
     try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
     collapseSetup();
     shareConfig(s);
+    if (s.code) try { history.replaceState(null, "", "#" + s.code); } catch(e){}
     $("compose").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
   };
 
@@ -514,6 +522,7 @@ canvas{display:block; width:100%; height:auto}
       store = s; fillSetup(s);
       try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
       collapseSetup(); if (!silent) $("setupMsg").textContent = "Réglages du magasin récupérés.";
+      try { history.replaceState(null, "", "#" + code); } catch(e){}
       return true;
     } catch (e) {
       if (!silent) $("setupMsg").textContent = e.status === 401 ? "Code d’accès invalide." : "Impossible de récupérer les réglages pour l’instant.";
@@ -521,7 +530,16 @@ canvas{display:block; width:100%; height:auto}
     }
   }
   $("fetchCfg").onclick = () => { const c = $("sCode").value.trim(); if (!c){ $("sCode").focus(); $("setupMsg").textContent = "Saisis d’abord le code du magasin."; return; } pullConfig(c, false); };
-  setTimeout(() => { if (store && store.code) pullConfig(store.code, true); }, 0);
+  // Lien personnel : adamsvincent.github.io/pepite/#CODE arrive déjà paramétré
+  setTimeout(() => {
+    const h = decodeURIComponent((location.hash || "").slice(1)).trim().toUpperCase();
+    const linkCode = (/^[A-Z0-9][A-Z0-9-]{3,40}$/.test(h) && h !== "MENTIONS") ? h : "";
+    if (linkCode && (!store || store.code !== linkCode)){ $("sCode").value = linkCode; pullConfig(linkCode, false); }
+    else if (store && store.code){
+      pullConfig(store.code, true);
+      if (!linkCode) try { history.replaceState(null, "", "#" + store.code); } catch(e){}
+    }
+  }, 0);
 
   // ---------- Type de post ----------
   function applyType(){
@@ -535,7 +553,7 @@ canvas{display:block; width:100%; height:auto}
   // ---------- Photo ----------
   let photos = [], photoBlob = null, photoImg = null;
   $("photo").addEventListener("change", async (e) => {
-    const list = Array.from(e.target.files || []).slice(0, 10);
+    const list = Array.from(e.target.files || []).slice(0, 20);
     if (!list.length) return;
     try {
       const out = [];
@@ -624,6 +642,11 @@ canvas{display:block; width:100%; height:auto}
   ["prBase","prVal"].forEach(id => $(id).addEventListener("input", updatePromoUI));
 
   function collectPost(){
+    const p = collectPostBase();
+    p.tone = radioVal("ptone") || (store && store.tone) || "";
+    return p;
+  }
+  function collectPostBase(){
     const t = radioVal("ptype");
     if (t === "nouveaute") return {type:t, item:$("nItem").value.trim(), price:$("nPrice").value.trim(), state:$("nState").value, note:$("nNote").value.trim()};
     if (t === "promo") return Object.assign({type:t, what:$("prWhat").value.trim(), until:$("prUntil").value.trim()}, computePromo());
@@ -641,7 +664,7 @@ canvas{display:block; width:100%; height:auto}
     return `Tu écris des publications Facebook/Instagram pour un magasin de seconde main indépendant (dépôt-vente, achat-vente d’occasion).
 
 Magasin : ${s.name}${s.city ? ", " + s.city : ""}.
-Ton : ${s.tone}. Émojis : ${s.emoji}.
+Ton : ${p.tone || s.tone}. Émojis : ${s.emoji}.
 Horaires et adresse à rappeler en fin de post : ${s.hours || "(non fournis, n’en invente pas)"}.
 Hashtags fixes du magasin : ${s.tags || "(aucun)"}.
 
@@ -664,7 +687,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
   // ---------- Mode démo sans IA ----------
   function fallback(s, p){
-    const tu = /tutoie/.test(s.tone);
+    const tu = /tutoie/.test(p.tone || s.tone);
     const em = s.emoji === "aucun" ? (x)=>"" : (x)=>x;
     const end = s.hours ? `\n\n${em("📍 ")}${s.hours}` : "";
     let article, accroche, texte;
@@ -1058,8 +1081,21 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const mode = bgMode(), cut = mode !== "none" ? cutFor(ph) : null;
       if (cut){ drawStudio(x, F, ph, cut, mode, brand, t); return; }
       const img = photoSrc(ph), iw = srcW(img), ih = srcH(img);
-      const sc = Math.max(W/iw, H/ih) * (1 + 0.10 * Math.min(1, t / DUR));
-      x.drawImage(img, (W-iw*sc)/2, (H-ih*sc)/2, iw*sc, ih*sc);
+      const z = t < DUR ? 1 + 0.08 * (t / DUR) : 1;   // léger zoom uniquement en vidéo
+      const ra = iw / ih, rf = W / H, loss = 1 - Math.min(ra / rf, rf / ra);
+      if (loss < 0.12){
+        const sc = Math.max(W/iw, H/ih) * z;
+        x.drawImage(img, (W-iw*sc)/2, (H-ih*sc)/2, iw*sc, ih*sc);
+      } else {
+        // photo entière, sur un fond flouté de la même photo
+        const bw = Math.max(8, Math.round(W / 30)), bh = Math.max(8, Math.round(H / 30));
+        const bc = document.createElement("canvas"); bc.width = bw; bc.height = bh;
+        const bg = bc.getContext("2d"), bs = Math.max(bw/iw, bh/ih);
+        bg.drawImage(img, (bw-iw*bs)/2, (bh-ih*bs)/2, iw*bs, ih*bs); bg.fillStyle = "rgba(0,0,0,.2)"; bg.fillRect(0, 0, bw, bh);
+        x.imageSmoothingQuality = "high"; x.drawImage(bc, 0, 0, W, H);
+        const sc = Math.min(W/iw, H/ih) * z;
+        x.drawImage(img, (W-iw*sc)/2, (H-ih*sc)/2, iw*sc, ih*sc);
+      }
       const g = x.createLinearGradient(0, H*0.42, 0, H);
       g.addColorStop(0,"rgba(0,0,0,0)"); g.addColorStop(1,"rgba(0,0,0,.75)");
       x.fillStyle = g; x.fillRect(0,0,W,H);
@@ -1092,7 +1128,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const dh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
       x.save(); x.fillStyle = "#fff"; roundRect(x, F.side, cy - dh/2 - 8, lw + 24, dh + 16, 12); x.fill(); x.restore();
       x.drawImage(logoImg, F.side + 12, cy - dh/2, lw, dh);
-      if (s.city) x.fillText(s.city, F.side + lw + 48, cy);
+      x.fillText(s.name, F.side + lw + 48, cy);
     } else {
       x.fillText(s.name + (s.city ? " · " + s.city : ""), F.side, cy);
     }
@@ -1118,7 +1154,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       drawBg(x, F, null, brand, 99);
       const light = isLight(brand), ink = light ? "#1B2A4A" : "#fff";
       drawPill(x, F.side, F.top, (idx + 1) + " / " + total, tcolor);
-      const tu = /tutoie/.test(s.tone || "");
+      const tu = /tutoie/.test((p && p.tone) || s.tone || "");
       const head = tu ? "On t’attend !" : "On vous attend !";
       const bodyLines = wrap(x, s.hours, W - F.side - F.right, '700 50px "Atkinson Hyperlegible", sans-serif').slice(0, 6);
       const bodyH = bodyLines.length * 66;
