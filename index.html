@@ -98,7 +98,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .hist-item .th{width:56px; height:56px; border-radius:8px; background:var(--paper) center/cover no-repeat; flex:none}
 .hist-item .tx{flex:1; min-width:0; font-size:13.5px; color:var(--muted)}
 .hist-item .tx b{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:15px; color:var(--ink)}
-.hist-item{flex-wrap:wrap}
+.hist-item{flex-wrap:wrap; max-width:100%; box-sizing:border-box; overflow:hidden}
+.hist-item .tx{flex:1 1 0}
 .hist-item .ac{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex-basis:100%}
 .mini{font:inherit; font-size:13px; font-weight:700; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 10px; cursor:pointer}
 .mini.sold{border-color:#B42318; color:#B42318}
@@ -133,6 +134,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .annonce{margin-top:14px; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--field)}
 .annonce summary{cursor:pointer; font-weight:700}
 .annonce .actions{margin-top:10px}
+.editrow{margin-top:10px}
+.editrow input{margin-bottom:0}
 .tip{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:14px; line-height:1.45; margin-top:16px}
 .drop .thumb{width:72px; height:72px; border-radius:10px; background:var(--paper) center/cover no-repeat; flex:none; display:grid; place-items:center; color:var(--muted); font-size:28px}
 .drop p{margin:0; font-size:14px; color:var(--muted)}
@@ -218,6 +221,13 @@ canvas{display:block; width:100%; height:auto}
           <input type="text" id="sCity" placeholder="Ex. Échirolles">
         </div>
       </div>
+      <label for="sKind">Type de commerce</label>
+      <select id="sKind">
+        <option value="occasion">Seconde main (dépôt-vente, achat-vente d’occasion)</option>
+        <option value="neuf">Boutique de produits neufs (déco, cadeaux, maison…)</option>
+        <option value="bouche">Métiers de bouche (boulangerie, pâtisserie, donuts…)</option>
+        <option value="snack">Restauration rapide (fast-food, snacking, food truck…)</option>
+      </select>
       <label for="sHours">Horaires et adresse <span class="hint">(repris en fin de post)</span></label>
       <input type="text" id="sHours" placeholder="Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas">
       <label for="sCode">Code d’accès <span class="hint">(fourni par Adams Partners, il active l’IA)</span></label>
@@ -268,13 +278,13 @@ canvas{display:block; width:100%; height:auto}
     </div>
     <p class="streak" id="streak"></p>
     <div class="queue hidden" id="queueBox">
-      <div class="qhead"><b>📅 À publier (<span id="qCount">0</span>)</b><button class="mini" id="qIcs" type="button">🔔 Rappels dans l’agenda</button></div>
+      <div class="qhead"><b>📥 Mes posts prêts (<span id="qCount">0</span>)</b></div>
       <div class="hist" id="queue"></div>
-      <p class="qtip">Appuie sur « Ouvrir » le jour prévu : le post est prêt, il ne reste qu’à publier. Tu peux aussi tout programmer d’avance dans Instagram ou Meta Business Suite.</p>
+      <p class="qtip">Appuie sur « Publier » quand tu veux : le post s’ouvre prêt à partir.</p>
     </div>
     <div class="seg" role="radiogroup" aria-label="Mode de création">
-      <input type="radio" name="pmode" id="pm1" value="one" checked><label for="pm1">Un post</label>
-      <input type="radio" name="pmode" id="pm2" value="batch"><label for="pm2">📦 Arrivage (plusieurs articles)</label>
+      <input type="radio" name="pmode" id="md1" value="one" checked><label for="md1">Un post</label>
+      <input type="radio" name="pmode" id="md2" value="batch"><label for="md2">📦 Plusieurs posts</label>
     </div>
     <div id="oneBox">
 
@@ -299,7 +309,7 @@ canvas{display:block; width:100%; height:auto}
 
     <!-- Nouveauté -->
     <div data-for="nouveaute">
-      <label for="nItem">Article <span class="hint">(facultatif, sinon identification automatique)</span></label>
+      <label for="nItem"><span id="nItemL">Article</span> <span class="hint">(facultatif, sinon identification automatique)</span></label>
       <input type="text" id="nItem" placeholder="Ex. Machine à café Delonghi Magnifica">
       <div class="row">
         <div>
@@ -307,7 +317,7 @@ canvas{display:block; width:100%; height:auto}
           <input type="text" id="nPrice" inputmode="decimal" placeholder="Ex. 89 €">
         </div>
         <div>
-          <label for="nState">État</label>
+          <label for="nState" id="nStateL">État</label>
           <select id="nState">
             <option>Neuf</option><option>Comme neuf</option><option>Très bon état</option><option selected>Bon état</option><option>État correct</option><option>À réparer</option><option>À rénover</option>
           </select>
@@ -370,7 +380,7 @@ canvas{display:block; width:100%; height:auto}
 
     </div>
     <div id="batchBox" class="hidden">
-      <p class="hintline" style="margin:0 0 4px">Ajoute les photos de ton arrivage (une par article, 10 max) : Pépite prépare un post par article, à publier un par jour.</p>
+      <p class="hintline" style="margin:0 0 4px" id="batchHint">Une photo par article (10 max) : Pépite prépare tous les posts et les range dans « Mes posts prêts ». Tu les publies quand tu veux.</p>
       <div class="photobtns">
         <label class="btn ghost pbtn" for="bCam">📷 Prendre une photo</label>
         <label class="btn ghost pbtn" for="bAlbum">🖼️ Choisir dans l’album</label>
@@ -378,8 +388,6 @@ canvas{display:block; width:100%; height:auto}
       <input type="file" id="bCam" accept="image/*" capture="environment" class="vh">
       <input type="file" id="bAlbum" accept="image/*" multiple class="vh">
       <div class="blist" id="bList"></div>
-      <label for="bStart">Un post par jour (sauf le dimanche), à partir de</label>
-      <div class="row2"><select id="bStart"><option value="0">aujourd’hui</option><option value="1" selected>demain</option></select><input type="time" id="bTime" value="12:00" aria-label="Heure de publication"></div>
     </div>
 
     <label>Ton du post</label>
@@ -431,10 +439,14 @@ canvas{display:block; width:100%; height:auto}
       <span id="slideInfo"></span>
       <button type="button" id="nextS" aria-label="Image suivante">›</button>
     </div>
+    <div class="row editrow" id="editRow">
+      <div><label for="eTitle">Titre du visuel</label><input type="text" id="eTitle" maxlength="60"></div>
+      <div id="ePriceBox"><label for="ePrice">Prix affiché</label><input type="text" id="ePrice" inputmode="decimal"></div>
+    </div>
     <div class="meta" id="meta"></div>
     <label for="caption">Texte du post <span class="hint">(modifiable)</span></label>
     <textarea id="caption"></textarea>
-    <details class="annonce hidden" id="annBox">
+    <details class="annonce hidden" id="annBox" open>
       <summary>🏷️ Annonce Leboncoin / Marketplace</summary>
       <label for="annTitle">Titre</label>
       <input type="text" id="annTitle">
@@ -449,6 +461,10 @@ canvas{display:block; width:100%; height:auto}
     <div class="actions">
       <button class="btn ghost" id="copy" type="button">Copier le texte</button>
       <button class="btn ghost" id="dl" type="button" disabled>Télécharger</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="keep" type="button">📥 Garder pour plus tard</button>
+      <button class="btn ghost hidden" id="annBtn" type="button">🏷️ Annonce Leboncoin</button>
     </div>
     <div class="status" id="pubStatus" role="status" aria-live="polite"></div>
     <p class="note">Publie réseau par réseau : après chaque envoi, reviens ici, le suivant est prêt. Le texte est copié à chaque fois.</p>
@@ -485,6 +501,91 @@ canvas{display:block; width:100%; height:auto}
 (() => {
   const $ = (id) => document.getElementById(id);
   const TYPE_LABEL = {nouveaute:"Nouveauté", promo:"Promo", info:"Info magasin", vendu:"Vendu !"};
+  // Profils métier : libellés, champs et consignes adaptés au type de commerce
+  const PROFILES = {
+    occasion: {
+      labels: {nouveaute:"Nouveauté", promo:"Promo", info:"Info magasin", vendu:"Vendu !"},
+      subs: {nouveaute:"un article arrivé", promo:"prix cassés", info:"vie du magasin", vendu:"ça part vite"},
+      stamp: "VENDU", state: true, annonce: true, unit: "article",
+      intro: "un magasin de seconde main indépendant (dépôt-vente, achat-vente d’occasion)",
+      newDesc: "présenter UN article qui vient d’arriver en magasin",
+      soldDesc: "annoncer qu’un article a trouvé preneur, pour montrer que les bonnes affaires partent vite et donner envie de passer vite pour les prochaines. Remercie l’acheteur sans le nommer et annonce que d’autres bonnes affaires arrivent.",
+      rules: ["- Valorise la bonne affaire et le réemploi, sans culpabiliser."],
+      cta: "passer en magasin, réserver par message",
+      item: "Ex. Machine à café Delonghi Magnifica", note: "Ex. testée en magasin, garantie 3 mois", promoWhat: "Ex. bergère en velours, ou tout le rayon vaisselle",
+      fbNew: ["Pièce unique : passe vite la voir ou réserve-la par message", "Pièce unique : passez vite la voir ou réservez-la par message"],
+      fbSold: ["a trouvé son nouveau propriétaire, merci !", "D’autres bonnes affaires arrivent chaque jour"],
+      tags: ["#secondemain", "#bonnesaffaires", "#reemploi"],
+      topics: ["On rachète vos objets", "Gros arrivage cette semaine", "Horaires exceptionnels", "Événement au magasin", "Recrutement", "Les coulisses du magasin", "Le top 5 de la semaine", "Comment nous vendre ou déposer vos objets", "Dernière chance avant samedi", "Autre"],
+      ideas: [["Les coulisses du magasin", "Comment on trie, teste et nettoie les objets avant de les mettre en rayon"], ["Le top 5 de la semaine", "Les 5 plus belles trouvailles arrivées cette semaine"], ["Comment nous vendre ou déposer vos objets", "Les étapes simples pour nous vendre ou déposer vos objets"], ["Dernière chance avant samedi", "Les articles en rayon depuis un moment, à saisir avant samedi"], ["On rachète vos objets", "Ce que nous recherchons en ce moment"], ["Gros arrivage cette semaine", "Beaucoup de nouveautés en rayon cette semaine, à découvrir vite"]]
+    },
+    neuf: {
+      labels: {nouveaute:"Nouveauté", promo:"Promo", info:"Info boutique", vendu:"Épuisé !"},
+      subs: {nouveaute:"vient d’arriver", promo:"soldes, remises", info:"vie de la boutique", vendu:"victime de son succès"},
+      stamp: "ÉPUISÉ", state: false, annonce: false, unit: "produit",
+      intro: "une boutique indépendante qui vend des produits neufs",
+      newDesc: "présenter UN produit qui vient d’arriver en boutique",
+      soldDesc: "annoncer qu’un produit est épuisé, victime de son succès : remercie les clients, donne envie de revenir vite et, si c’est utile, invite à demander le réassort ou à réserver.",
+      rules: ["- Valorise la nouveauté, la qualité et le conseil en boutique. C’est un produit neuf : ne parle jamais d’occasion ni d’état."],
+      cta: "passer en boutique, réserver par message",
+      item: "Ex. Lampe de bureau en laiton", note: "Ex. 3 coloris disponibles, idée cadeau", promoWhat: "Ex. toute la vaisselle, ou la lampe en laiton",
+      fbNew: ["Disponible dès maintenant en boutique : passe vite la découvrir", "Disponible dès maintenant en boutique : passez vite la découvrir"],
+      fbSold: ["a eu un succès fou, merci !", "D’autres nouveautés arrivent très vite"],
+      tags: ["#nouveaute", "#shoppinglocal", "#commercedeproximite"],
+      topics: ["Nouvelle collection", "Idées cadeaux", "Horaires exceptionnels", "Événement en boutique", "Recrutement", "Les coulisses de la boutique", "Le top 5 de la semaine", "Autre"],
+      ideas: [["Nouvelle collection", "Les nouveautés qui viennent d’arriver en boutique"], ["Idées cadeaux", "Notre sélection d’idées cadeaux du moment"], ["Les coulisses de la boutique", "Comment on choisit les produits que l’on vous propose"], ["Le top 5 de la semaine", "Les 5 produits préférés de nos clients cette semaine"], ["Événement en boutique", "Une journée spéciale en boutique, avec des surprises"]]
+    },
+    bouche: {
+      labels: {nouveaute:"Du jour", promo:"Offre", info:"Info", vendu:"Épuisé !"},
+      subs: {nouveaute:"produit à la une", promo:"formule, lot, remise", info:"vie de la boutique", vendu:"tout est parti"},
+      stamp: "ÉPUISÉ", state: false, annonce: false, unit: "produit",
+      intro: "un commerce de métiers de bouche (boulangerie, pâtisserie, viennoiserie, donuts, gourmandises)",
+      newDesc: "mettre en avant UN produit du jour (pâtisserie, viennoiserie, pain, gourmandise…)",
+      soldDesc: "annoncer qu’un produit est épuisé, tout est parti : remercie les clients, donne envie de revenir tôt la prochaine fois ou de commander à l’avance.",
+      rules: ["- Donne envie : gourmandise, fraîcheur, savoir-faire, sans en faire trop.", "- N’invente JAMAIS d’allergènes, d’ingrédients, ni de mention « fait maison », « artisanal », « bio », « local », d’origine ou de label qui ne sont pas donnés : ces mentions sont réglementées.", "- Aucune allégation de santé."],
+      cta: "passer en boutique, commander à l’avance",
+      item: "Ex. Tarte aux framboises", note: "Ex. disponible jusqu’à 13 h, sur commande pour 6 personnes", promoWhat: "Ex. formule petit-déjeuner, ou 3 donuts achetés",
+      fbNew: ["Disponible aujourd’hui en boutique : viens vite te régaler", "Disponible aujourd’hui en boutique : venez vite vous régaler"],
+      fbSold: ["a fait fondre tout le monde, merci !", "Pensez à passer tôt ou à commander à l’avance"],
+      tags: ["#gourmandise", "#miam", "#commercedeproximite"],
+      topics: ["Produit de saison", "Nouveauté de la semaine", "Commandes pour les fêtes", "Horaires exceptionnels", "Les coulisses du laboratoire", "Recrutement", "Autre"],
+      ideas: [["Les coulisses du laboratoire", "La préparation de nos produits, tôt le matin"], ["Produit de saison", "Le produit du moment, à découvrir tant qu’il est là"], ["Commandes pour les fêtes", "Pensez à commander à l’avance pour vos fêtes et anniversaires"], ["Nouveauté de la semaine", "Une nouvelle recette à goûter cette semaine"]]
+    },
+    snack: {
+      labels: {nouveaute:"Nouveauté", promo:"Offre", info:"Info", vendu:"Épuisé !"},
+      subs: {nouveaute:"à la carte", promo:"menu, formule", info:"vie du restaurant", vendu:"victime de son succès"},
+      stamp: "ÉPUISÉ", state: false, annonce: false, unit: "produit",
+      intro: "un établissement de restauration rapide (fast-food, snacking, food truck)",
+      newDesc: "présenter UN produit ou menu à la carte",
+      soldDesc: "annoncer qu’un produit est épuisé, victime de son succès : remercie les clients et donne envie de revenir vite.",
+      rules: ["- Donne faim : texte court, punchy, appétissant.", "- N’invente JAMAIS d’allergènes, d’ingrédients, ni de mention « fait maison », « halal », « bio », d’origine de la viande ou de label qui ne sont pas donnés.", "- Parle de sur place, à emporter ou livraison seulement si c’est indiqué."],
+      cta: "venir manger, commander",
+      item: "Ex. Burger double cheddar", note: "Ex. en menu avec frites et boisson, sur place ou à emporter", promoWhat: "Ex. le menu étudiant, ou le 2e burger",
+      fbNew: ["Dispo dès maintenant : viens vite le goûter", "Disponible dès maintenant : venez vite le goûter"],
+      fbSold: ["a cartonné, merci !", "Revenez vite, on en refait"],
+      tags: ["#streetfood", "#foodlover", "#commercedeproximite"],
+      topics: ["Nouveau à la carte", "Livraison ou click & collect", "Soirée match ou événement", "Horaires exceptionnels", "Les coulisses de la cuisine", "Recrutement", "Autre"],
+      ideas: [["Les coulisses de la cuisine", "La préparation en cuisine, avant le coup de feu"], ["Nouveau à la carte", "La nouveauté de la carte à goûter cette semaine"], ["Soirée match ou événement", "Une soirée spéciale au restaurant"], ["Livraison ou click & collect", "Comment commander en quelques clics"]]
+    }
+  };
+  const prof = () => PROFILES[(store && store.kind) || "occasion"] || PROFILES.occasion;
+  function applyProfile(){
+    const P = prof();
+    Object.assign(TYPE_LABEL, P.labels);
+    [["p1","nouveaute"],["p2","promo"],["p3","info"],["p4","vendu"]].forEach(([id, k]) => {
+      const lb = document.querySelector(`label[for="${id}"]`); if (!lb) return;
+      lb.querySelector("b").textContent = P.labels[k] === "Info magasin" || P.labels[k] === "Info boutique" ? "Info" : P.labels[k];
+      lb.querySelector("span").textContent = P.subs[k];
+    });
+    $("nState").classList.toggle("hidden", !P.state); $("nStateL").classList.toggle("hidden", !P.state);
+    $("nItem").placeholder = P.item; $("nItemL").textContent = P.unit === "article" ? "Article" : "Produit"; $("nNote").placeholder = P.note; $("prWhat").placeholder = P.promoWhat;
+    const sel = $("iTopic"), cur = sel.value; sel.innerHTML = "";
+    P.topics.forEach(t => { const o = document.createElement("option"); o.textContent = t; sel.append(o); });
+    if (P.topics.includes(cur)) sel.value = cur;
+    const lbl = document.querySelector('label[for="photo"]'); if (lbl && lbl.querySelector(".hint")) lbl.querySelector(".hint").textContent = `(le ${P.unit} est identifié à partir de la photo)`;
+    if ($("batchHint")) $("batchHint").textContent = `Une photo par ${P.unit} (10 max) : Pépite prépare tous les posts et les range dans « Mes posts prêts ». Tu les publies quand tu veux.`;
+    if (typeof renderBatch === "function") renderBatch();
+  }
   const TYPE_COLOR = {nouveaute:"#2F8F5B", promo:"#E4572E", info:"#2E86AB", vendu:"#B42318"};
 
   // ---------- Paramétrage ----------
@@ -530,6 +631,7 @@ canvas{display:block; width:100%; height:auto}
       emoji: radioVal("emoji"),
       tags: $("sTags").value.trim(),
       color: $("sColor").value,
+      kind: $("sKind").value,
       logo: logoData
     };
   }
@@ -538,6 +640,7 @@ canvas{display:block; width:100%; height:auto}
     $("sName").value = s.name || ""; $("sCity").value = s.city || ""; $("sHours").value = s.hours || ""; $("sCode").value = s.code || "";
     $("sTags").value = s.tags || ""; if (s.tone) setRadio("tone", s.tone); if (s.emoji) setRadio("emoji", s.emoji);
     setLogo(s.logo || null);
+    $("sKind").value = s.kind || "occasion";
     if (s.color && /^#[0-9a-f]{6}$/i.test(s.color)) { $("sColor").value = s.color.toLowerCase(); $("sColorHex").value = s.color.toUpperCase(); }
   }
   function collapseSetup(){
@@ -559,7 +662,7 @@ canvas{display:block; width:100%; height:auto}
     const s = readSetup();
     if (!s.name) { $("sName").focus(); $("sName").setAttribute("aria-invalid","true"); return; }
     $("sName").removeAttribute("aria-invalid");
-    store = s;
+    store = s; applyProfile();
     try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
     collapseSetup();
     shareConfig(s);
@@ -587,7 +690,7 @@ canvas{display:block; width:100%; height:auto}
       const d = await relayCall({action:"getConfig", code});
       if (!d.config){ if (!silent) $("setupMsg").textContent = "Aucun réglage enregistré pour ce code : renseigne-les puis enregistre."; return false; }
       const s = Object.assign({}, d.config, {code});
-      store = s; fillSetup(s);
+      store = s; fillSetup(s); applyProfile();
       try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
       collapseSetup(); if (!silent) $("setupMsg").textContent = "Réglages du magasin récupérés.";
       try { history.replaceState(null, "", "#" + code); } catch(e){}
@@ -719,7 +822,7 @@ canvas{display:block; width:100%; height:auto}
   }
   function collectPostBase(){
     const t = radioVal("ptype");
-    if (t === "nouveaute") return {type:t, item:$("nItem").value.trim(), price:$("nPrice").value.trim(), state:$("nState").value, note:$("nNote").value.trim()};
+    if (t === "nouveaute") return {type:t, item:$("nItem").value.trim(), price:$("nPrice").value.trim(), state: prof().state ? $("nState").value : "", note:$("nNote").value.trim()};
     if (t === "promo") return Object.assign({type:t, what:$("prWhat").value.trim(), until:$("prUntil").value.trim()}, computePromo());
     if (t === "vendu") return {type:t, item:$("vItem").value.trim(), delay:$("vDelay").value.trim()};
     return {type:t, topic:$("iTopic").value, detail:$("iDetail").value.trim()};
@@ -727,12 +830,12 @@ canvas{display:block; width:100%; height:auto}
 
   function buildPrompt(s, p){
     const typeDesc = {
-      nouveaute: `Post « nouveauté » : présenter UN article qui vient d’arriver en magasin. Article saisi par le magasin : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer en magasin)"}. État : ${p.state}. Précision : ${p.note || "aucune"}.`,
+      nouveaute: `Post « ${TYPE_LABEL.nouveaute} » : ${prof().newDesc}. Produit saisi par le commerçant : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer)"}.${prof().state ? " État : " + p.state + "." : ""} Précision : ${p.note || "aucune"}.`,
       promo: `Post « promo ». Ce qui est en promo : ${p.what || "(non précisé)"}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. Jusqu’au : ${p.until || "(non précisé)"}. Utilise exactement ces montants, n’en calcule pas d’autres.`,
-      vendu: `Post « vendu » : annoncer qu’un article a trouvé preneur, pour montrer que les bonnes affaires partent vite et donner envie de passer vite pour les prochaines. Article : ${p.item || "(non saisi, identifie-le sur la photo)"}. Parti en : ${p.delay || "(non précisé, n’invente pas de délai)"}. Remercie l’acheteur sans le nommer et annonce que d’autres bonnes affaires arrivent. Accroche courte et festive.`,
+      vendu: `Post « ${TYPE_LABEL.vendu} » : ${prof().soldDesc} Produit : ${p.item || "(non saisi, identifie-le sur la photo)"}. Parti en : ${p.delay || "(non précisé, n’invente pas de délai)"}. Accroche courte et festive.`,
       info: `Post « info magasin ». Sujet : ${p.topic}. Détails : ${p.detail || "aucun"}.`
     }[p.type];
-    return `Tu écris des publications Facebook/Instagram pour un magasin de seconde main indépendant (dépôt-vente, achat-vente d’occasion).
+    return `Tu écris des publications Facebook/Instagram pour ${prof().intro}.
 
 Magasin : ${s.name}${s.city ? ", " + s.city : ""}.
 Ton : ${p.tone || s.tone}. Émojis : ${s.emoji}.
@@ -745,17 +848,17 @@ ${photoBlob ? "Une photo est jointe : c’est la photo prise par le magasin." : 
 Règles :
 - N’invente jamais de prix, de défaut, de garantie, de marque ou de date qui ne sont pas donnés ou clairement visibles sur la photo.
 - Si tu identifies l’article sur la photo, nomme-le précisément (type, et marque/modèle seulement si visible). Si tu n’es pas sûr, reste générique et mets la confiance à « faible ».
-- Valorise la bonne affaire et le réemploi, sans culpabiliser.
+${prof().rules.join("\n")}
 - Dans les deux premières lignes, cite naturellement le type d’article et la ville du magasin (${s.city || "la ville"}) : ce sont les mots que les clients tapent dans la recherche Instagram.
 - Termine le texte, juste avant les horaires, par une question courte et simple qui donne envie de répondre en commentaire, en plus de l’invitation à passer en magasin.
-- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (passer en magasin, réserver par message).
+- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (${prof().cta}).
 - Termine par les horaires/adresse s’ils sont fournis.
 - Propose au maximum 5 hashtags pertinents au total, en comptant les hashtags fixes du magasin.
 
 - Écris toujours les prix avec le symbole €, par exemple « 59 € ».
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${p.type === "nouveaute" || p.type === "promo" ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${p.type === "nouveaute" || p.type === "promo" ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${prof().annonce && (p.type === "nouveaute" || p.type === "promo") ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${prof().annonce && (p.type === "nouveaute" || p.type === "promo") ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
   }
 
   // ---------- Mode démo sans IA ----------
@@ -765,9 +868,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const end = s.hours ? `\n\n${em("📍 ")}${s.hours}` : "";
     let article, accroche, texte;
     if (p.type === "nouveaute"){
-      article = p.item || "Nouvel article";
+      article = p.item || (prof().state ? "Nouvel article" : "Nouveau produit");
       accroche = p.item ? p.item.split(" ").slice(0,4).join(" ") : "Tout juste arrivé";
-      texte = `${em("✨ ")}Nouveauté chez ${s.name} !\n${article}${p.state ? ", " + p.state.toLowerCase() : ""}${p.price ? ", à " + normPrice(p.price) : ""}.\n${p.note ? p.note.charAt(0).toUpperCase()+p.note.slice(1)+".\n" : ""}Pièce unique : ${tu ? "passe vite la voir ou réserve-la par message" : "passez vite la voir ou réservez-la par message"}${em(" 👀")}${end}`;
+      texte = `${em("✨ ")}${(store && store.kind) === "bouche" ? "Aujourd’hui" : "Nouveauté"} chez ${s.name} !\n${article}${p.state ? ", " + p.state.toLowerCase() : ""}${p.price ? ", à " + normPrice(p.price) : ""}.\n${p.note ? p.note.charAt(0).toUpperCase()+p.note.slice(1)+".\n" : ""}${prof().fbNew[tu ? 0 : 1]}${em(" 👀")}${end}`;
     } else if (p.type === "promo"){
       article = p.what || "Promo";
       accroche = (p.pct !== null ? "-" + p.pct + " % " : "") + (p.what ? p.what.split(" ").slice(0,3).join(" ") : "en magasin");
@@ -775,7 +878,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     } else if (p.type === "vendu"){
       article = p.item || "Article vendu";
       accroche = "Déjà parti !";
-      texte = `${em("🎉 ")}Vendu${p.delay ? " en " + p.delay : ""} !\n${p.item ? p.item.charAt(0).toUpperCase() + p.item.slice(1) : "Cet article"} a trouvé son nouveau propriétaire, merci !\nD’autres bonnes affaires arrivent chaque jour chez ${s.name} : ${tu ? "passe vite avant qu’elles partent" : "passez vite avant qu’elles partent"}${em(" 🏃")}${end}`;
+      texte = `${em("🎉 ")}${prof().state ? "Vendu" : "Épuisé"}${p.delay ? " en " + p.delay : ""} !\n${p.item ? p.item.charAt(0).toUpperCase() + p.item.slice(1) : "Ce produit"} ${prof().fbSold[0]}\n${prof().fbSold[1]} chez ${s.name} : ${tu ? "passe vite avant qu’elles partent" : "passez vite avant qu’elles partent"}${em(" 🏃")}${end}`;
     } else {
       article = p.topic;
       accroche = p.topic;
@@ -784,7 +887,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const q = p.type === "info" ? (tu ? "Une question ? Pose-la en commentaire 👇" : "Une question ? Posez-la en commentaire 👇") : (tu ? "Tu craques ? Dis-le en commentaire 👇" : "Vous craquez ? Dites-le en commentaire 👇");
     if (end && texte.endsWith(end)) texte = texte.slice(0, -end.length) + "\n" + q + end; else texte += "\n" + q;
     if (s.city && !texte.includes(s.city)) texte = texte.replace(s.name, s.name + " à " + s.city);
-    const tags = [s.city ? "#" + s.city.toLowerCase().replace(/[^a-zà-ÿ0-9]/g,"") : "", "#secondemain", "#bonnesaffaires", "#reemploi"].filter(Boolean);
+    const tags = [s.city ? "#" + s.city.toLowerCase().replace(/[^a-zà-ÿ0-9]/g,"") : "", ...prof().tags].filter(Boolean);
     return {article, confiance:"démo", accroche, texte, hashtags:tags};
   }
 
@@ -822,7 +925,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (mode === "ia" && result.confiance) add("Identification : " + result.confiance);
     if (mode === "ia" && typeof result.restant === "number") add(result.restant + (result.restant > 1 ? " posts restants ce mois-ci" : " post restant ce mois-ci"));
     if (mode === "demo") add("Mode démo");
-    $("preview").classList.add("on");
+    $("preview").classList.add("on"); fillEdit(); $("keep").classList.remove("hidden");
     await refresh();
     addHist(p, result, $("caption").value);
     $("preview").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
@@ -841,10 +944,35 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function bumpStats(){ const o = loadStats(); o.n += 1; try { localStorage.setItem(SKEY, JSON.stringify(o)); } catch(e){} }
   const fmtMin = (m) => m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + String(m % 60).padStart(2, "0") : "");
 
+  // ---------- Titre et prix du visuel, modifiables sans relancer l’IA ----------
+  function priceOf(p){ return p.type === "nouveaute" ? (p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.newPrice != null ? euro(p.newPrice) : "") : ""; }
+  function fillEdit(){
+    const {p, r} = current; if (!p || !r) return;
+    $("eTitle").value = r.accroche || r.article || "";
+    const hasPrice = p.type === "nouveaute" || (p.type === "promo" && p.newPrice != null);
+    $("ePriceBox").classList.toggle("hidden", !hasPrice); $("ePrice").value = priceOf(p);
+  }
+  let editT = null;
+  const editRefresh = () => { clearTimeout(editT); editT = setTimeout(() => refresh(), 250); };
+  $("eTitle").addEventListener("input", () => { if (!current.r) return; current.r = Object.assign({}, current.r, {accroche: $("eTitle").value}); editRefresh(); });
+  $("ePrice").addEventListener("change", () => {
+    const {p} = current; if (!p) return;
+    const old = priceOf(p), v = $("ePrice").value.trim();
+    if (p.type === "nouveaute") current.p = Object.assign({}, p, {price: v});
+    else if (p.type === "promo"){
+      const n = num(v); if (n === null) return;
+      const pct = p.base != null && n < p.base ? Math.round((1 - n / p.base) * 100) : p.pct;
+      current.p = Object.assign({}, p, {newPrice: n, pct, tag: euro(n), pctTag: pct != null ? "-" + pct + " %" : ""});
+    }
+    const now = priceOf(current.p);
+    if (old && now && old !== now) $("caption").value = $("caption").value.split(old).join(now);
+    $("ePrice").value = now; refresh();
+  });
+
   // ---------- Annonce Leboncoin / Marketplace ----------
   function fillAnnonce(p, r){
-    const on = p && (p.type === "nouveaute" || p.type === "promo");
-    $("annBox").classList.toggle("hidden", !on);
+    const on = p && prof().annonce && (p.type === "nouveaute" || p.type === "promo");
+    $("annBtn").classList.toggle("hidden", !on); $("annBox").classList.add("hidden"); $("annBtn").textContent = "🏷️ Annonce Leboncoin";
     if (!on) return;
     const s = store || {};
     const art = (r && r.article) || p.item || p.what || "Article";
@@ -853,13 +981,15 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     $("annText").value = ((r && r.annonce_texte) || [art + (p.state ? ", " + p.state.toLowerCase() : "") + ".", price ? "Prix : " + price + "." : "", "À retirer en magasin chez " + (s.name || "nous") + (s.city ? " à " + s.city : "") + ".", s.hours ? "Horaires : " + s.hours + "." : ""].filter(Boolean).join("\n")).replace(/\\n/g, "\n");
   }
   const copyTxt = async (txt, btn, label) => { try { await navigator.clipboard.writeText(txt); btn.textContent = "Copié ✓"; } catch(e){ btn.textContent = "Copie impossible"; } setTimeout(() => btn.textContent = label, 1600); };
+  $("annBtn").onclick = () => { const h = $("annBox").classList.toggle("hidden"); $("annBtn").textContent = h ? "🏷️ Annonce Leboncoin" : "Masquer l’annonce"; if (!h) $("annBox").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"center"}); };
   $("annCopyT").onclick = () => copyTxt($("annTitle").value, $("annCopyT"), "Copier le titre");
   $("annCopyD").onclick = () => copyTxt($("annText").value, $("annCopyD"), "Copier la description");
 
   // ---------- Idées de posts « Info » ----------
-  const IDEAS = [["Les coulisses du magasin", "Comment on trie, teste et nettoie les objets avant de les mettre en rayon"], ["Le top 5 de la semaine", "Les 5 plus belles trouvailles arrivées cette semaine"], ["Comment nous vendre ou déposer vos objets", "Les étapes simples pour nous vendre ou déposer vos objets"], ["Dernière chance avant samedi", "Les articles en rayon depuis un moment, à saisir avant samedi"], ["On rachète vos objets", "Ce que nous recherchons en ce moment"], ["Gros arrivage cette semaine", "Beaucoup de nouveautés en rayon cette semaine, à découvrir vite"]];
+  const ideasFor = () => prof().ideas;
   $("iIdea").onclick = () => {
-    const pool = IDEAS.filter(i => i[0] !== $("iTopic").value), it = pool[Math.floor(Math.random() * pool.length)];
+    const pool = ideasFor().filter(i => i[0] !== $("iTopic").value), it = pool[Math.floor(Math.random() * pool.length)];
+    if (![...$("iTopic").options].some(o => o.value === it[0])){ const o = document.createElement("option"); o.textContent = it[0]; $("iTopic").prepend(o); }
     $("iTopic").value = it[0]; $("iDetail").value = it[1]; $("iDetail").focus();
   };
 
@@ -880,20 +1010,25 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   let batch = [];
   const isBatch = () => radioVal("pmode") === "batch";
   function setMode(m){ setRadio("pmode", m); applyMode(); }
-  function genLabel(){ $("generate").textContent = isBatch() ? (batch.length ? `Préparer les ${batch.length} posts` : "Préparer les posts") : "Générer le post"; }
+  function genLabel(){ $("generate").textContent = isBatch() ? (batch.length > 1 ? `Préparer les ${batch.length} posts` : batch.length ? "Préparer le post" : "Préparer les posts") : "Générer le post"; }
   function applyMode(){ $("oneBox").classList.toggle("hidden", isBatch()); $("batchBox").classList.toggle("hidden", !isBatch()); genLabel(); }
   document.querySelectorAll('input[name="pmode"]').forEach(r => r.addEventListener("change", applyMode));
   const STATES = ["Neuf", "Comme neuf", "Très bon état", "Bon état", "État correct", "À réparer", "À rénover"];
   function renderBatch(){
-    const box = $("bList"); box.innerHTML = "";
+    const box = $("bList"); if (!box) return; box.innerHTML = "";
+    const withState = prof().state;
     batch.forEach((b, i) => {
-      const row = document.createElement("div"); row.className = "brow";
+      const row = document.createElement("div"); row.className = "brow"; if (!withState) row.style.gridTemplateColumns = "56px 1fr 34px";
       const th = document.createElement("div"); th.className = "th"; th.style.backgroundImage = `url(${b.url})`;
-      const pr = document.createElement("input"); pr.type = "text"; pr.inputMode = "decimal"; pr.placeholder = "Prix €"; pr.value = b.price; pr.setAttribute("aria-label", "Prix de l’article " + (i + 1)); pr.oninput = () => b.price = pr.value;
-      const st = document.createElement("select"); st.setAttribute("aria-label", "État de l’article " + (i + 1));
-      STATES.forEach(x => { const o = document.createElement("option"); o.textContent = x; if (x === b.state) o.selected = true; st.append(o); }); st.onchange = () => b.state = st.value;
-      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Retirer l’article " + (i + 1)); rm.onclick = () => { batch.splice(i, 1); renderBatch(); };
-      row.append(th, pr, st, rm); box.append(row);
+      const pr = document.createElement("input"); pr.type = "text"; pr.inputMode = "decimal"; pr.placeholder = "Prix €"; pr.value = b.price; pr.setAttribute("aria-label", "Prix " + (i + 1)); pr.oninput = () => b.price = pr.value;
+      row.append(th, pr);
+      if (withState){
+        const st = document.createElement("select"); st.setAttribute("aria-label", "État " + (i + 1));
+        STATES.forEach(x => { const o = document.createElement("option"); o.textContent = x; if (x === b.state) o.selected = true; st.append(o); }); st.onchange = () => b.state = st.value;
+        row.append(st);
+      }
+      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Retirer " + (i + 1)); rm.onclick = () => { batch.splice(i, 1); renderBatch(); };
+      row.append(rm); box.append(row);
     });
     genLabel();
   }
@@ -921,111 +1056,90 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   async function runBatch(){
-    if (!batch.length){ setStatus("Ajoute au moins une photo d’article.", true); return; }
+    if (!batch.length){ setStatus("Ajoute au moins une photo.", true); return; }
     busy = true; $("generate").disabled = true;
     const tone = radioVal("ptone") || store.tone || "";
-    const [hh, mm] = ($("bTime").value || "12:00").split(":").map(Number);
-    const first = new Date(); first.setHours(isFinite(hh) ? hh : 12, isFinite(mm) ? mm : 0, 0, 0); first.setDate(first.getDate() + (parseInt($("bStart").value, 10) || 0));
-    const q = loadQueue();
-    const last = q.reduce((m, x) => Math.max(m, new Date(x.when).getTime()), 0);
-    if (last){ const after = new Date(last); after.setDate(after.getDate() + 1); after.setHours(first.getHours(), first.getMinutes(), 0, 0); if (after > first) first.setTime(after.getTime()); }
-    if (first.getDay() === 0) first.setDate(first.getDate() + 1);
-    const cur = new Date(first);
-    const keep = {photos, photoImg, photoBlob}; let made = 0, demo = 0, msg = "";
+    const q = loadQueue(); const keep = {photos, photoImg, photoBlob}; let made = 0, demo = 0, msg = "";
     for (let i = 0; i < batch.length; i++){
       const b = batch[i];
       setStatus(`Préparation du post ${i + 1} sur ${batch.length}…`);
       photos = [{img: b.img, blob: b.blob}]; photoImg = b.img; photoBlob = b.blob;
-      const p = {type: "nouveaute", item: "", price: b.price.trim(), state: b.state, note: "", tone};
+      const p = {type: "nouveaute", item: "", price: b.price.trim(), state: prof().state ? b.state : "", note: "", tone};
       let r = null;
       try { r = await genAI(p); } catch(e){ r = null; msg = e.message || ""; }
       if (!r || !r.texte){ r = fallback(store, p); demo++; }
       const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(r.hashtags || [])])).slice(0, 5);
-      const caption = r.texte.trim() + "\n\n" + tags.join(" ");
-      const when = new Date(cur); cur.setDate(cur.getDate() + 1); if (cur.getDay() === 0) cur.setDate(cur.getDate() + 1);
-      const id = Date.now() + i, item = {id, when: when.toISOString(), p, r, caption, thumb: thumbData(b.img, 200)};
-      try { await idbPut(id, b.blob); } catch(e){ item.photo = thumbData(b.img, 1280); }
+      const item = {id: Date.now() + i, p, r, caption: r.texte.trim() + "\n\n" + tags.join(" "), thumb: thumbData(b.img, 200), n: 1};
+      try { await idbPut(item.id + "_0", b.blob); } catch(e){ item.photo = thumbData(b.img, 1280); }
       q.push(item); saveQueue(q); bumpStats(); made++;
       if (i < batch.length - 1) await sleep(500);
     }
     photos = keep.photos; photoImg = keep.photoImg; photoBlob = keep.photoBlob;
     batch.forEach(b => URL.revokeObjectURL(b.url)); batch = []; renderBatch(); renderQueue(); updateStreak();
-    setStatus(`${made} post${made > 1 ? "s" : ""} prêt${made > 1 ? "s" : ""} dans « À publier » 👆, un par jour.` + (demo ? ` ${demo} rédigé${demo > 1 ? "s" : ""} avec les modèles de base${msg ? " (" + msg.replace(/ Texte créé avec les modèles de base\./, "") + ")" : ""}.` : ""), !!demo);
+    setStatus(`${made} post${made > 1 ? "s" : ""} prêt${made > 1 ? "s" : ""} dans « Mes posts prêts » 👆 : publie-les quand tu veux.` + (demo ? ` ${demo} rédigé${demo > 1 ? "s" : ""} avec les modèles de base${msg ? " (" + msg.replace(/ Texte créé avec les modèles de base\./, "") + ")" : ""}.` : ""), !!demo);
     $("queueBox").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block: "start"});
     busy = false; $("generate").disabled = false;
   }
 
-  function whenLabel(d){
-    const now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()), dd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const diff = Math.round((dd - t0) / 864e5), h = d.getHours() + " h" + (d.getMinutes() ? String(d.getMinutes()).padStart(2, "0") : "");
-    if (diff < 0) return "En retard · prévu le " + d.toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"});
-    if (diff === 0) return "Aujourd’hui · " + h; if (diff === 1) return "Demain · " + h;
-    return d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"short"}) + " · " + h;
-  }
   function renderQueue(){
-    const list = loadQueue().sort((a, b) => new Date(a.when) - new Date(b.when)), box = $("queue");
+    const list = loadQueue().sort((a, b) => a.id - b.id), box = $("queue");
     $("queueBox").classList.toggle("hidden", !list.length); $("qCount").textContent = list.length;
     box.innerHTML = "";
     list.forEach(q => {
-      const d = new Date(q.when), due = d <= new Date(Date.now() + 864e5) && d.toDateString() === new Date().toDateString() || d < new Date();
-      const it = document.createElement("div"); it.className = "hist-item" + (due ? " due" : "");
+      const it = document.createElement("div"); it.className = "hist-item";
       const th = document.createElement("div"); th.className = "th"; if (q.thumb) th.style.backgroundImage = `url(${q.thumb})`;
       const tx = document.createElement("div"); tx.className = "tx";
-      const b = document.createElement("b"); b.textContent = (q.r && q.r.article) || "Article";
-      const sp = document.createElement("span"); sp.textContent = (due ? "👉 " : "") + whenLabel(d);
+      const b = document.createElement("b"); b.textContent = (q.r && (q.r.accroche || q.r.article)) || "Post";
+      const sp = document.createElement("span"); sp.textContent = TYPE_LABEL[q.p.type] + (q.n > 1 ? " · carrousel de " + q.n + " photos" : "") + " · prêt depuis le " + new Date(q.id).toLocaleDateString("fr-FR", {day:"numeric", month:"short"});
       tx.append(b, sp);
       const ac = document.createElement("div"); ac.className = "ac";
-      const op = document.createElement("button"); op.type = "button"; op.className = "mini"; op.textContent = "Ouvrir"; op.onclick = () => openQueued(q);
-      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Retirer de la liste");
-      rm.onclick = () => { saveQueue(loadQueue().filter(x => x.id !== q.id)); idbDel(q.id); renderQueue(); };
+      const op = document.createElement("button"); op.type = "button"; op.className = "mini"; op.textContent = "Publier"; op.onclick = () => openQueued(q);
+      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Supprimer ce post prêt");
+      rm.onclick = () => { saveQueue(loadQueue().filter(x => x.id !== q.id)); for (let i = 0; i < (q.n || 1); i++) idbDel(q.id + "_" + i); renderQueue(); };
       ac.append(op, rm); it.append(th, tx, ac); box.append(it);
     });
   }
   async function openQueued(q){
     if (!store){ setStatus("Renseigne d’abord le magasin (étape 1).", true); return; }
-    let blob = null; try { blob = await idbGet(q.id); } catch(e){}
-    let img;
-    if (blob){ const u = URL.createObjectURL(blob); img = await imgFromData(u); }
-    else if (q.photo){ img = await imgFromData(q.photo); blob = await downscale(img, 1280); }
-    else { setStatus("La photo de ce post n’est plus disponible sur ce téléphone.", true); return; }
-    photos = [{img, blob, enh: autoEnhance(img)}]; photoImg = img; photoBlob = blob;
-    $("thumb").style.backgroundImage = `url(${q.thumb || ""})`; $("thumb").textContent = ""; $("photoLabel").textContent = "Photo de l’arrivage · changer";
+    const out = [];
+    for (let i = 0; i < (q.n || 1); i++){
+      let blob = null; try { blob = await idbGet(q.id + "_" + i); } catch(e){}
+      if (!blob && i === 0){ try { blob = await idbGet(q.id); } catch(e){} }
+      let img = null;
+      if (blob) img = await imgFromData(URL.createObjectURL(blob));
+      else if (i === 0 && q.photo){ img = await imgFromData(q.photo); blob = await downscale(img, 1280); }
+      if (img) out.push({img, blob, enh: autoEnhance(img)});
+    }
+    if (!out.length && q.p.type !== "info"){ setStatus("La photo de ce post n’est plus disponible sur ce téléphone.", true); return; }
+    photos = out; photoImg = out[0] ? out[0].img : null; photoBlob = out[0] ? out[0].blob : null;
+    $("thumb").style.backgroundImage = q.thumb ? `url(${q.thumb})` : ""; $("thumb").textContent = q.thumb ? "" : "＋";
+    $("photoLabel").textContent = out.length > 1 ? `${out.length} photos · changer` : "Photo du post prêt · changer";
     current = {s: store, p: q.p, r: q.r, queueId: q.id};
     $("caption").value = q.caption;
-    setMeta([TYPE_LABEL[q.p.type], q.r.article ? "Article : " + q.r.article : "", "À publier"]); fillAnnonce(q.p, q.r);
+    setMeta([TYPE_LABEL[q.p.type], q.r.article ? "Article : " + q.r.article : "", "Post prêt"]); fillAnnonce(q.p, q.r);
+    $("preview").classList.add("on"); fillEdit(); $("keep").classList.add("hidden");
     if (bgMode() !== "none") applyBackground();
-    $("preview").classList.add("on");
     await refresh();
     $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
   }
   function finishQueued(){
     const id = current.queueId; if (!id) return;
     const q = loadQueue().find(x => x.id === id);
-    saveQueue(loadQueue().filter(x => x.id !== id)); idbDel(id);
+    saveQueue(loadQueue().filter(x => x.id !== id));
+    if (q) for (let i = 0; i < (q.n || 1); i++) idbDel(id + "_" + i);
     current.queueId = null;
-    if (q) addHist(q.p, q.r, $("caption").value);
+    if (q && !q.inHist) addHist(q.p, Object.assign({}, q.r, current.r), $("caption").value);
     renderQueue();
   }
-  // Rappels dans l’agenda du téléphone (fichier .ics)
-  $("qIcs").onclick = () => {
-    const list = loadQueue().filter(q => new Date(q.when) > new Date(Date.now() - 36e5));
-    if (!list.length){ setStatus("Aucun post à venir dans « À publier ».", true); return; }
-    const p2 = (n) => String(n).padStart(2, "0"), dt = (d) => d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "T" + p2(d.getHours()) + p2(d.getMinutes()) + "00";
-    const esc = (x) => String(x).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
-    const now = new Date(), L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Adams Partners//Pepite//FR", "CALSCALE:GREGORIAN"];
-    list.forEach(q => {
-      const d = new Date(q.when), e = new Date(d.getTime() + 15 * 6e4);
-      L.push("BEGIN:VEVENT", "UID:pepite-" + q.id + "@adamspartners.fr", "DTSTAMP:" + dt(now), "DTSTART:" + dt(d), "DTEND:" + dt(e),
-        "SUMMARY:" + esc("📣 Publier : " + ((q.r && q.r.article) || "article")), "DESCRIPTION:" + esc("Ouvre Pépite, puis « À publier » et « Ouvrir » : le post est prêt.\n" + location.href.split("#")[0]),
-        "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:PT0M", "DESCRIPTION:" + esc("Publier sur Pépite"), "END:VALARM", "END:VEVENT");
-    });
-    L.push("END:VCALENDAR");
-    const text = L.join("\r\n");
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    if (ios){ const w = window.open("data:text/calendar;charset=utf-8," + encodeURIComponent(text), "_blank"); if (w) return; }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: "text/calendar"})); a.download = "pepite-rappels.ics";
-    document.body.append(a); a.click(); a.remove();
-    setStatus("Ouvre le fichier « pepite-rappels.ics » pour ajouter les rappels à ton agenda.");
+  // « Garder pour plus tard » : range le post affiché dans « Mes posts prêts »
+  $("keep").onclick = async () => {
+    const {p, r} = current; if (!p || !r) return;
+    const item = {id: Date.now(), p, r, caption: $("caption").value, thumb: photos[0] ? thumbData(photos[0].img, 200) : null, n: photos.length, inHist: true};
+    try { for (let i = 0; i < photos.length; i++) await idbPut(item.id + "_" + i, photos[i].blob); }
+    catch(e){ if (photos[0]) item.photo = thumbData(photos[0].img, 1280); item.n = photos[0] ? 1 : 0; }
+    const q = loadQueue(); q.push(item); saveQueue(q); renderQueue();
+    $("keep").classList.add("hidden");
+    pub("Post rangé dans « Mes posts prêts », en haut de l’étape 2 : publie-le quand tu veux.");
   };
 
   // ---------- Historique (gardé sur ce téléphone) ----------
@@ -1064,7 +1178,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     current = {s:store, p:e.p, r:e.r};
     $("caption").value = e.caption;
     setMeta([TYPE_LABEL[e.p.type], e.r.article ? "Article : " + e.r.article : "", "Republication"]); fillAnnonce(e.p, e.r);
-    $("preview").classList.add("on");
+    $("preview").classList.add("on"); fillEdit(); $("keep").classList.remove("hidden");
     await refresh();
     $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
   }
@@ -1083,11 +1197,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const el = $("streak"); if (!el) return;
     const now = new Date(), day = (now.getDay() + 6) % 7, monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
     const n = loadHist().filter(e => new Date(e.date) >= monday).length;
-    let txt = n === 0 ? "🎯 Objectif de la semaine : 3 posts ou plus" : `🔥 ${n} post${n > 1 ? "s" : ""} cette semaine${n >= 3 ? " : bravo, continue comme ça !" : " · objectif : 3 ou plus"}`;
     const st = loadStats();
-    if (st.n) txt += `\n⏱️ Environ ${fmtMin(st.n * MIN_PER_POST)} gagnées ce mois-ci (${st.n} post${st.n > 1 ? "s" : ""} préparé${st.n > 1 ? "s" : ""})`;
-    const stale = loadHist().filter(e => (e.p.type === "nouveaute" || e.p.type === "promo") && !e.sold && Date.now() - new Date(e.date).getTime() > 7 * 864e5).length;
-    if (stale) txt += `\n📣 ${stale} article${stale > 1 ? "s" : ""} publié${stale > 1 ? "s" : ""} il y a plus d’une semaine : « Relancer » dans Mes derniers posts`;
+    let txt = n === 0 ? "🎯 Objectif : 3 posts cette semaine" : `🔥 ${n} post${n > 1 ? "s" : ""} cette semaine`;
+    if (st.n) txt += ` · ⏱️ environ ${fmtMin(st.n * MIN_PER_POST)} gagnées ce mois-ci`;
     el.textContent = txt;
   }
   function renderHist(){
@@ -1111,7 +1223,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       it.append(th, tx, ac); box.append(it);
     });
   }
-  renderHist(); renderQueue(); applyMode();
+  renderHist(); renderQueue(); applyMode(); applyProfile();
 
   // ---------- Studio photo : lumière auto, détourage, fonds ----------
   const ORT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.wasm.bundle.min.mjs";
@@ -1578,7 +1690,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
         x.lineWidth = 14; x.strokeStyle = "#B42318"; roundRect(x, -sw/2 + 14, -sh/2 + 14, sw - 28, sh - 28, 16); x.stroke();
         x.fillStyle = "#B42318"; x.textAlign = "center"; x.textBaseline = "middle";
         x.font = '800 150px "Bricolage Grotesque", sans-serif';
-        x.fillText("VENDU", 0, 8);
+        x.fillText(prof().stamp, 0, 8);
         x.restore(); x.textAlign = "left"; x.textBaseline = "alphabetic";
       }
     }
