@@ -331,7 +331,7 @@ canvas{display:block; width:100%; height:auto}
     <div data-for="promo" class="hidden">
       <label for="prWhat">Ce qui est en promo</label>
       <input type="text" id="prWhat" placeholder="Ex. bergère en velours, ou tout le rayon vaisselle">
-      <label for="prBase">Prix de base <span class="hint">(facultatif pour une promo sur tout un rayon)</span></label>
+      <label for="prBase">Prix de base <span class="hint" id="prBaseH">(facultatif pour une promo sur tout un rayon)</span></label>
       <input type="text" id="prBase" inputmode="decimal" placeholder="Ex. 79 €">
       <label>Type de remise</label>
       <div class="chips" role="radiogroup" aria-label="Type de remise">
@@ -355,7 +355,7 @@ canvas{display:block; width:100%; height:auto}
     <div data-for="vendu" class="hidden">
       <label for="vItem">Article vendu</label>
       <input type="text" id="vItem" placeholder="Ex. bergère en velours rouge">
-      <label for="vDelay">Parti en… <span class="hint">(facultatif)</span></label>
+      <label for="vDelay"><span id="vDelayL">Parti en…</span> <span class="hint">(facultatif)</span></label>
       <input type="text" id="vDelay" placeholder="Ex. moins de 24 h">
     </div>
 
@@ -569,6 +569,17 @@ canvas{display:block; width:100%; height:auto}
     }
   };
   const prof = () => PROFILES[(store && store.kind) || "occasion"] || PROFILES.occasion;
+  const PH = {"occasion": {"sName": "Ex. La Caverne d’Échirolles", "sCity": "Ex. Échirolles", "sHours": "Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas", "sTags": "#secondemain #echirolles", "nPrice": "Ex. 89 €", "prBase": "Ex. 79 €", "prUntil": "Ex. samedi soir", "vItem": "Ex. bergère en velours rouge", "vDelay": "Ex. moins de 24 h", "iDetail": "Ex. rachat cash sur rendez-vous, électroménager et multimédia en priorité", "prBaseH": "(facultatif pour une promo sur tout un rayon)", "vDelayL": "Parti en…"}, "neuf": {"sName": "Ex. Maison Lila", "sCity": "Ex. Périgueux", "sHours": "Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas", "sTags": "#boutique #commercelocal", "nPrice": "Ex. 39 €", "prBase": "Ex. 49 €", "prUntil": "Ex. dimanche soir", "vItem": "Ex. lampe de bureau en laiton", "vDelay": "Ex. 2 jours", "iDetail": "Ex. nouvelle collection arrivée, idées cadeaux pour la fête des mères", "prBaseH": "(facultatif pour une promo sur tout un rayon)", "vDelayL": "Épuisé en…"}, "bouche": {"sName": "Ex. Boulangerie du Marché", "sCity": "Ex. Sarlat", "sHours": "Ex. Du mardi au dimanche, 7 h – 19 h · 12 rue des Lilas", "sTags": "#boulangerie #patisserie", "nPrice": "Ex. 3,50 €", "prBase": "Ex. 12 €", "prUntil": "Ex. ce midi, ou jusqu’à samedi", "vItem": "Ex. tarte aux framboises", "vDelay": "Ex. avant midi", "iDetail": "Ex. fermeture exceptionnelle lundi, commandes de galettes ouvertes", "prBaseH": "(facultatif pour une offre sur toute une gamme)", "vDelayL": "Épuisé en…"}, "snack": {"sName": "Ex. Snack du Port", "sCity": "Ex. Arcachon", "sHours": "Ex. Tous les jours, 11 h 30 – 14 h 30 et 18 h 30 – 23 h", "sTags": "#streetfood #burger", "nPrice": "Ex. 11,90 €", "prBase": "Ex. 14,90 €", "prUntil": "Ex. ce soir, ou tout le week-end", "vItem": "Ex. burger double cheddar", "vDelay": "Ex. avant 13 h", "iDetail": "Ex. ouvert dimanche soir, livraison à partir de 19 h", "prBaseH": "(facultatif pour une offre sur toute la carte)", "vDelayL": "Épuisé en…"}};
+  const SETUP_PH = ["sName", "sCity", "sHours", "sTags"];
+  function applyPh(kind, onlySetup){
+    const P = PH[kind] || PH.occasion;
+    Object.keys(P).forEach(id => {
+      if (onlySetup && !SETUP_PH.includes(id)) return;
+      const el = $(id); if (!el) return;
+      if (id === "prBaseH" || id === "vDelayL") el.textContent = P[id]; else el.placeholder = P[id];
+    });
+  }
+  $("sKind").addEventListener("change", () => applyPh($("sKind").value, true));
   function applyProfile(){
     const P = prof();
     Object.assign(TYPE_LABEL, P.labels);
@@ -578,6 +589,7 @@ canvas{display:block; width:100%; height:auto}
       lb.querySelector("span").textContent = P.subs[k];
     });
     $("nState").classList.toggle("hidden", !P.state); $("nStateL").classList.toggle("hidden", !P.state);
+    applyPh((store && store.kind) || "occasion");
     $("nItem").placeholder = P.item; $("nItemL").textContent = P.unit === "article" ? "Article" : "Produit"; $("nNote").placeholder = P.note; $("prWhat").placeholder = P.promoWhat;
     const sel = $("iTopic"), cur = sel.value; sel.innerHTML = "";
     P.topics.forEach(t => { const o = document.createElement("option"); o.textContent = t; sel.append(o); });
