@@ -98,7 +98,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .hist-item .th{width:56px; height:56px; border-radius:8px; background:var(--paper) center/cover no-repeat; flex:none}
 .hist-item .tx{flex:1; min-width:0; font-size:13.5px; color:var(--muted)}
 .hist-item .tx b{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:15px; color:var(--ink)}
-.hist-item .ac{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+.hist-item{flex-wrap:wrap}
+.hist-item .ac{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex-basis:100%}
 .mini{font:inherit; font-size:13px; font-weight:700; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 10px; cursor:pointer}
 .mini.sold{border-color:#B42318; color:#B42318}
 .types input{position:absolute; opacity:0; pointer-events:none}
@@ -113,7 +114,25 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .photobtns{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px}
 .pbtn{font-size:15px; padding:12px 8px; text-align:center}
 .vh{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden}
-.streak{font-size:14px; color:var(--muted); margin:-4px 0 14px}
+.streak{font-size:14px; color:var(--muted); margin:-4px 0 14px; white-space:pre-line}
+.seg{display:grid; grid-template-columns:1fr 1.6fr; gap:8px; margin:0 0 16px}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg label{margin:0; font-size:15px; font-weight:700; text-align:center; border:1.5px solid var(--line); border-radius:12px; padding:11px 8px; cursor:pointer; background:var(--field)}
+.seg input:checked + label{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.seg input:focus-visible + label{outline:3px solid var(--info); outline-offset:2px}
+.queue{border:2px solid var(--ink); border-radius:14px; padding:12px; margin:0 0 16px; background:var(--surface)}
+.qhead{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap}
+.qtip{font-size:13px; color:var(--muted); margin:8px 0 0}
+.hist-item.due{border-color:var(--ink); background:var(--surface)}
+.blist{display:grid; gap:8px; margin-top:12px}
+.brow{display:grid; grid-template-columns:56px 0.8fr 1.3fr 34px; gap:8px; align-items:center}
+.brow .th{width:56px; height:56px; border-radius:8px; background:var(--paper) center/cover no-repeat}
+.brow input, .brow select{margin:0; padding:10px; font-size:15px}
+.row2{display:grid; grid-template-columns:1fr 120px; gap:8px}
+.lblrow{display:flex; justify-content:space-between; align-items:flex-end; gap:8px}
+.annonce{margin-top:14px; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--field)}
+.annonce summary{cursor:pointer; font-weight:700}
+.annonce .actions{margin-top:10px}
 .tip{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:14px; line-height:1.45; margin-top:16px}
 .drop .thumb{width:72px; height:72px; border-radius:10px; background:var(--paper) center/cover no-repeat; flex:none; display:grid; place-items:center; color:var(--muted); font-size:28px}
 .drop p{margin:0; font-size:14px; color:var(--muted)}
@@ -248,6 +267,16 @@ canvas{display:block; width:100%; height:auto}
       <h2>Le post</h2>
     </div>
     <p class="streak" id="streak"></p>
+    <div class="queue hidden" id="queueBox">
+      <div class="qhead"><b>📅 À publier (<span id="qCount">0</span>)</b><button class="mini" id="qIcs" type="button">🔔 Rappels dans l’agenda</button></div>
+      <div class="hist" id="queue"></div>
+      <p class="qtip">Appuie sur « Ouvrir » le jour prévu : le post est prêt, il ne reste qu’à publier. Tu peux aussi tout programmer d’avance dans Instagram ou Meta Business Suite.</p>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Mode de création">
+      <input type="radio" name="pmode" id="pm1" value="one" checked><label for="pm1">Un post</label>
+      <input type="radio" name="pmode" id="pm2" value="batch"><label for="pm2">📦 Arrivage (plusieurs articles)</label>
+    </div>
+    <div id="oneBox">
 
     <div class="types" role="radiogroup" aria-label="Type de post">
       <input type="radio" name="ptype" id="p1" value="nouveaute" checked><label for="p1" style="--c:var(--ok)"><b>Nouveauté</b><span>un article arrivé</span></label>
@@ -322,17 +351,35 @@ canvas{display:block; width:100%; height:auto}
 
     <!-- Info -->
     <div data-for="info" class="hidden">
-      <label for="iTopic">Sujet</label>
+      <div class="lblrow"><label for="iTopic">Sujet</label><button class="mini" id="iIdea" type="button">💡 Une idée ?</button></div>
       <select id="iTopic">
         <option>On rachète vos objets</option>
         <option>Gros arrivage cette semaine</option>
         <option>Horaires exceptionnels</option>
         <option>Événement au magasin</option>
         <option>Recrutement</option>
+        <option>Les coulisses du magasin</option>
+        <option>Le top 5 de la semaine</option>
+        <option>Comment nous vendre ou déposer vos objets</option>
+        <option>Dernière chance avant samedi</option>
         <option>Autre</option>
       </select>
       <label for="iDetail">Détails</label>
       <textarea id="iDetail" placeholder="Ex. rachat cash sur rendez-vous, électroménager et multimédia en priorité"></textarea>
+    </div>
+
+    </div>
+    <div id="batchBox" class="hidden">
+      <p class="hintline" style="margin:0 0 4px">Ajoute les photos de ton arrivage (une par article, 10 max) : Pépite prépare un post par article, à publier un par jour.</p>
+      <div class="photobtns">
+        <label class="btn ghost pbtn" for="bCam">📷 Prendre une photo</label>
+        <label class="btn ghost pbtn" for="bAlbum">🖼️ Choisir dans l’album</label>
+      </div>
+      <input type="file" id="bCam" accept="image/*" capture="environment" class="vh">
+      <input type="file" id="bAlbum" accept="image/*" multiple class="vh">
+      <div class="blist" id="bList"></div>
+      <label for="bStart">Un post par jour (sauf le dimanche), à partir de</label>
+      <div class="row2"><select id="bStart"><option value="0">aujourd’hui</option><option value="1" selected>demain</option></select><input type="time" id="bTime" value="12:00" aria-label="Heure de publication"></div>
     </div>
 
     <label>Ton du post</label>
@@ -387,6 +434,15 @@ canvas{display:block; width:100%; height:auto}
     <div class="meta" id="meta"></div>
     <label for="caption">Texte du post <span class="hint">(modifiable)</span></label>
     <textarea id="caption"></textarea>
+    <details class="annonce hidden" id="annBox">
+      <summary>🏷️ Annonce Leboncoin / Marketplace</summary>
+      <label for="annTitle">Titre</label>
+      <input type="text" id="annTitle">
+      <label for="annText">Description</label>
+      <textarea id="annText" style="min-height:130px"></textarea>
+      <div class="actions"><button class="btn ghost" id="annCopyT" type="button">Copier le titre</button><button class="btn ghost" id="annCopyD" type="button">Copier la description</button></div>
+      <p class="note">Colle-les dans Leboncoin, Marketplace ou ton site, avec la photo (bouton « Télécharger »).</p>
+    </details>
     <button class="btn ghost big hidden" id="makeVideo" type="button">Créer la vidéo (7 s)</button>
     <p class="tip">✅ <strong>Avant de publier</strong>, vérifie que tu es sur le <strong>compte du magasin</strong> dans Instagram (appui long sur ta photo de profil pour changer de compte).<br>💡 Active « Partager aussi sur Facebook » : la publication part aussi sur la page du magasin.<br>⤢ Si Instagram recadre la photo en carré, appuie sur l’icône de recadrage en bas à gauche de l’image pour garder le format complet.</p>
     <div class="publist" id="pubList"></div>
@@ -699,7 +755,7 @@ Règles :
 - Écris toujours les prix avec le symbole €, par exemple « 59 € ».
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"]}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${p.type === "nouveaute" || p.type === "promo" ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${p.type === "nouveaute" || p.type === "promo" ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
   }
 
   // ---------- Mode démo sans IA ----------
@@ -737,6 +793,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   $("generate").onclick = async () => {
     if (busy) return;
     if (!store) { store = readSetup(); if (!store.name) { setStatus("Renseigne d’abord le nom du magasin (étape 1).", true); $("sName").focus(); return; } }
+    if (isBatch()) { await runBatch(); return; }
     const p = collectPost();
     if (p.type === "nouveaute" && !photoBlob && !p.item) { setStatus("Ajoute une photo ou le nom de l’article.", true); return; }
     if (p.type === "vendu" && !photoBlob && !p.item) { setStatus("Ajoute la photo ou le nom de l’article vendu.", true); return; }
@@ -757,6 +814,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     current = {s:store, p, r:result};
     const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(result.hashtags || [])])).slice(0, 5);
     $("caption").value = result.texte.trim() + "\n\n" + tags.join(" ");
+    bumpStats(); fillAnnonce(p, result);
     const meta = $("meta"); meta.innerHTML = "";
     const add = (t) => { const s = document.createElement("span"); s.className = "badge"; s.textContent = t; meta.append(s); };
     add(TYPE_LABEL[p.type]);
@@ -769,6 +827,205 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     addHist(p, result, $("caption").value);
     $("preview").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
     busy = false; $("generate").disabled = false;
+  };
+
+  async function genAI(p){
+    if (!(relayReady() && store.code)) return null;
+    return await askRelay(buildPrompt(store, p), store.code);
+  }
+
+  // ---------- Temps gagné (estimation : ~12 min par post entre retouche, mise en page et rédaction) ----------
+  const MIN_PER_POST = 12, SKEY = "pepite-stats";
+  const monthKey = () => new Date().toISOString().slice(0, 7);
+  function loadStats(){ try { const o = JSON.parse(localStorage.getItem(SKEY) || "{}"); return o.m === monthKey() ? o : {m: monthKey(), n: 0}; } catch(e){ return {m: monthKey(), n: 0}; } }
+  function bumpStats(){ const o = loadStats(); o.n += 1; try { localStorage.setItem(SKEY, JSON.stringify(o)); } catch(e){} }
+  const fmtMin = (m) => m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + String(m % 60).padStart(2, "0") : "");
+
+  // ---------- Annonce Leboncoin / Marketplace ----------
+  function fillAnnonce(p, r){
+    const on = p && (p.type === "nouveaute" || p.type === "promo");
+    $("annBox").classList.toggle("hidden", !on);
+    if (!on) return;
+    const s = store || {};
+    const art = (r && r.article) || p.item || p.what || "Article";
+    const price = p.type === "promo" ? (p.newPrice != null ? euro(p.newPrice) : "") : (p.price ? normPrice(p.price) : "");
+    $("annTitle").value = (r && r.annonce_titre) || art.slice(0, 60);
+    $("annText").value = ((r && r.annonce_texte) || [art + (p.state ? ", " + p.state.toLowerCase() : "") + ".", price ? "Prix : " + price + "." : "", "À retirer en magasin chez " + (s.name || "nous") + (s.city ? " à " + s.city : "") + ".", s.hours ? "Horaires : " + s.hours + "." : ""].filter(Boolean).join("\n")).replace(/\\n/g, "\n");
+  }
+  const copyTxt = async (txt, btn, label) => { try { await navigator.clipboard.writeText(txt); btn.textContent = "Copié ✓"; } catch(e){ btn.textContent = "Copie impossible"; } setTimeout(() => btn.textContent = label, 1600); };
+  $("annCopyT").onclick = () => copyTxt($("annTitle").value, $("annCopyT"), "Copier le titre");
+  $("annCopyD").onclick = () => copyTxt($("annText").value, $("annCopyD"), "Copier la description");
+
+  // ---------- Idées de posts « Info » ----------
+  const IDEAS = [["Les coulisses du magasin", "Comment on trie, teste et nettoie les objets avant de les mettre en rayon"], ["Le top 5 de la semaine", "Les 5 plus belles trouvailles arrivées cette semaine"], ["Comment nous vendre ou déposer vos objets", "Les étapes simples pour nous vendre ou déposer vos objets"], ["Dernière chance avant samedi", "Les articles en rayon depuis un moment, à saisir avant samedi"], ["On rachète vos objets", "Ce que nous recherchons en ce moment"], ["Gros arrivage cette semaine", "Beaucoup de nouveautés en rayon cette semaine, à découvrir vite"]];
+  $("iIdea").onclick = () => {
+    const pool = IDEAS.filter(i => i[0] !== $("iTopic").value), it = pool[Math.floor(Math.random() * pool.length)];
+    $("iTopic").value = it[0]; $("iDetail").value = it[1]; $("iDetail").focus();
+  };
+
+  // ---------- Relancer un article toujours en rayon ----------
+  async function relaunch(e){
+    setMode("one");
+    await setPhotoFromData(e.photo);
+    setRadio("ptype", "nouveaute"); applyType();
+    $("nItem").value = (e.r && e.r.article) || e.p.item || e.p.what || "";
+    $("nPrice").value = e.p.type === "promo" ? (e.p.newPrice != null ? String(e.p.newPrice).replace(".", ",") : "") : (e.p.price || "");
+    if (e.p.state) $("nState").value = e.p.state;
+    $("nNote").value = "Toujours disponible : relance, à saisir avant qu’il parte";
+    $("compose").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
+    setStatus("Article repris : vérifie puis génère le post de relance.");
+  }
+
+  // ---------- Mode « Arrivage » : plusieurs articles d’un coup ----------
+  let batch = [];
+  const isBatch = () => radioVal("pmode") === "batch";
+  function setMode(m){ setRadio("pmode", m); applyMode(); }
+  function genLabel(){ $("generate").textContent = isBatch() ? (batch.length ? `Préparer les ${batch.length} posts` : "Préparer les posts") : "Générer le post"; }
+  function applyMode(){ $("oneBox").classList.toggle("hidden", isBatch()); $("batchBox").classList.toggle("hidden", !isBatch()); genLabel(); }
+  document.querySelectorAll('input[name="pmode"]').forEach(r => r.addEventListener("change", applyMode));
+  const STATES = ["Neuf", "Comme neuf", "Très bon état", "Bon état", "État correct", "À réparer", "À rénover"];
+  function renderBatch(){
+    const box = $("bList"); box.innerHTML = "";
+    batch.forEach((b, i) => {
+      const row = document.createElement("div"); row.className = "brow";
+      const th = document.createElement("div"); th.className = "th"; th.style.backgroundImage = `url(${b.url})`;
+      const pr = document.createElement("input"); pr.type = "text"; pr.inputMode = "decimal"; pr.placeholder = "Prix €"; pr.value = b.price; pr.setAttribute("aria-label", "Prix de l’article " + (i + 1)); pr.oninput = () => b.price = pr.value;
+      const st = document.createElement("select"); st.setAttribute("aria-label", "État de l’article " + (i + 1));
+      STATES.forEach(x => { const o = document.createElement("option"); o.textContent = x; if (x === b.state) o.selected = true; st.append(o); }); st.onchange = () => b.state = st.value;
+      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Retirer l’article " + (i + 1)); rm.onclick = () => { batch.splice(i, 1); renderBatch(); };
+      row.append(th, pr, st, rm); box.append(row);
+    });
+    genLabel();
+  }
+  async function addBatch(input){
+    const files = Array.from(input.files || []);
+    for (const f of files){
+      if (batch.length >= 10){ setStatus("10 articles maximum par arrivage : prépare-les, puis lance un nouvel arrivage.", true); break; }
+      try { const img = await loadImage(f), blob = await downscale(img, 1280); batch.push({img, blob, url: URL.createObjectURL(blob), price: "", state: "Bon état"}); }
+      catch(e){ setStatus("Une photo n’a pas pu être lue.", true); }
+    }
+    input.value = ""; renderBatch();
+  }
+  $("bCam").addEventListener("change", (e) => addBatch(e.target));
+  $("bAlbum").addEventListener("change", (e) => addBatch(e.target));
+
+  // Photos de la file d’attente : gardées sur le téléphone (IndexedDB)
+  function idb(){ return new Promise((res, rej) => { const r = indexedDB.open("pepite", 1); r.onupgradeneeded = () => r.result.createObjectStore("photos"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+  async function idbDo(mode2, fn){ const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction("photos", mode2); const rq = fn(tx.objectStore("photos")); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error); }); }
+  const idbPut = (k, v) => idbDo("readwrite", st => st.put(v, k));
+  const idbGet = (k) => idbDo("readonly", st => st.get(k));
+  const idbDel = (k) => idbDo("readwrite", st => st.delete(k)).catch(() => {});
+  const QKEY = "pepite-file";
+  const loadQueue = () => { try { return JSON.parse(localStorage.getItem(QKEY) || "[]"); } catch(e){ return []; } };
+  const saveQueue = (l) => { try { localStorage.setItem(QKEY, JSON.stringify(l)); } catch(e){} };
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  async function runBatch(){
+    if (!batch.length){ setStatus("Ajoute au moins une photo d’article.", true); return; }
+    busy = true; $("generate").disabled = true;
+    const tone = radioVal("ptone") || store.tone || "";
+    const [hh, mm] = ($("bTime").value || "12:00").split(":").map(Number);
+    const first = new Date(); first.setHours(isFinite(hh) ? hh : 12, isFinite(mm) ? mm : 0, 0, 0); first.setDate(first.getDate() + (parseInt($("bStart").value, 10) || 0));
+    const q = loadQueue();
+    const last = q.reduce((m, x) => Math.max(m, new Date(x.when).getTime()), 0);
+    if (last){ const after = new Date(last); after.setDate(after.getDate() + 1); after.setHours(first.getHours(), first.getMinutes(), 0, 0); if (after > first) first.setTime(after.getTime()); }
+    if (first.getDay() === 0) first.setDate(first.getDate() + 1);
+    const cur = new Date(first);
+    const keep = {photos, photoImg, photoBlob}; let made = 0, demo = 0, msg = "";
+    for (let i = 0; i < batch.length; i++){
+      const b = batch[i];
+      setStatus(`Préparation du post ${i + 1} sur ${batch.length}…`);
+      photos = [{img: b.img, blob: b.blob}]; photoImg = b.img; photoBlob = b.blob;
+      const p = {type: "nouveaute", item: "", price: b.price.trim(), state: b.state, note: "", tone};
+      let r = null;
+      try { r = await genAI(p); } catch(e){ r = null; msg = e.message || ""; }
+      if (!r || !r.texte){ r = fallback(store, p); demo++; }
+      const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(r.hashtags || [])])).slice(0, 5);
+      const caption = r.texte.trim() + "\n\n" + tags.join(" ");
+      const when = new Date(cur); cur.setDate(cur.getDate() + 1); if (cur.getDay() === 0) cur.setDate(cur.getDate() + 1);
+      const id = Date.now() + i, item = {id, when: when.toISOString(), p, r, caption, thumb: thumbData(b.img, 200)};
+      try { await idbPut(id, b.blob); } catch(e){ item.photo = thumbData(b.img, 1280); }
+      q.push(item); saveQueue(q); bumpStats(); made++;
+      if (i < batch.length - 1) await sleep(500);
+    }
+    photos = keep.photos; photoImg = keep.photoImg; photoBlob = keep.photoBlob;
+    batch.forEach(b => URL.revokeObjectURL(b.url)); batch = []; renderBatch(); renderQueue(); updateStreak();
+    setStatus(`${made} post${made > 1 ? "s" : ""} prêt${made > 1 ? "s" : ""} dans « À publier » 👆, un par jour.` + (demo ? ` ${demo} rédigé${demo > 1 ? "s" : ""} avec les modèles de base${msg ? " (" + msg.replace(/ Texte créé avec les modèles de base\./, "") + ")" : ""}.` : ""), !!demo);
+    $("queueBox").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block: "start"});
+    busy = false; $("generate").disabled = false;
+  }
+
+  function whenLabel(d){
+    const now = new Date(), t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()), dd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diff = Math.round((dd - t0) / 864e5), h = d.getHours() + " h" + (d.getMinutes() ? String(d.getMinutes()).padStart(2, "0") : "");
+    if (diff < 0) return "En retard · prévu le " + d.toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"});
+    if (diff === 0) return "Aujourd’hui · " + h; if (diff === 1) return "Demain · " + h;
+    return d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"short"}) + " · " + h;
+  }
+  function renderQueue(){
+    const list = loadQueue().sort((a, b) => new Date(a.when) - new Date(b.when)), box = $("queue");
+    $("queueBox").classList.toggle("hidden", !list.length); $("qCount").textContent = list.length;
+    box.innerHTML = "";
+    list.forEach(q => {
+      const d = new Date(q.when), due = d <= new Date(Date.now() + 864e5) && d.toDateString() === new Date().toDateString() || d < new Date();
+      const it = document.createElement("div"); it.className = "hist-item" + (due ? " due" : "");
+      const th = document.createElement("div"); th.className = "th"; if (q.thumb) th.style.backgroundImage = `url(${q.thumb})`;
+      const tx = document.createElement("div"); tx.className = "tx";
+      const b = document.createElement("b"); b.textContent = (q.r && q.r.article) || "Article";
+      const sp = document.createElement("span"); sp.textContent = (due ? "👉 " : "") + whenLabel(d);
+      tx.append(b, sp);
+      const ac = document.createElement("div"); ac.className = "ac";
+      const op = document.createElement("button"); op.type = "button"; op.className = "mini"; op.textContent = "Ouvrir"; op.onclick = () => openQueued(q);
+      const rm = document.createElement("button"); rm.type = "button"; rm.className = "mini"; rm.textContent = "×"; rm.setAttribute("aria-label", "Retirer de la liste");
+      rm.onclick = () => { saveQueue(loadQueue().filter(x => x.id !== q.id)); idbDel(q.id); renderQueue(); };
+      ac.append(op, rm); it.append(th, tx, ac); box.append(it);
+    });
+  }
+  async function openQueued(q){
+    if (!store){ setStatus("Renseigne d’abord le magasin (étape 1).", true); return; }
+    let blob = null; try { blob = await idbGet(q.id); } catch(e){}
+    let img;
+    if (blob){ const u = URL.createObjectURL(blob); img = await imgFromData(u); }
+    else if (q.photo){ img = await imgFromData(q.photo); blob = await downscale(img, 1280); }
+    else { setStatus("La photo de ce post n’est plus disponible sur ce téléphone.", true); return; }
+    photos = [{img, blob, enh: autoEnhance(img)}]; photoImg = img; photoBlob = blob;
+    $("thumb").style.backgroundImage = `url(${q.thumb || ""})`; $("thumb").textContent = ""; $("photoLabel").textContent = "Photo de l’arrivage · changer";
+    current = {s: store, p: q.p, r: q.r, queueId: q.id};
+    $("caption").value = q.caption;
+    setMeta([TYPE_LABEL[q.p.type], q.r.article ? "Article : " + q.r.article : "", "À publier"]); fillAnnonce(q.p, q.r);
+    if (bgMode() !== "none") applyBackground();
+    $("preview").classList.add("on");
+    await refresh();
+    $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
+  }
+  function finishQueued(){
+    const id = current.queueId; if (!id) return;
+    const q = loadQueue().find(x => x.id === id);
+    saveQueue(loadQueue().filter(x => x.id !== id)); idbDel(id);
+    current.queueId = null;
+    if (q) addHist(q.p, q.r, $("caption").value);
+    renderQueue();
+  }
+  // Rappels dans l’agenda du téléphone (fichier .ics)
+  $("qIcs").onclick = () => {
+    const list = loadQueue().filter(q => new Date(q.when) > new Date(Date.now() - 36e5));
+    if (!list.length){ setStatus("Aucun post à venir dans « À publier ».", true); return; }
+    const p2 = (n) => String(n).padStart(2, "0"), dt = (d) => d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "T" + p2(d.getHours()) + p2(d.getMinutes()) + "00";
+    const esc = (x) => String(x).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    const now = new Date(), L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Adams Partners//Pepite//FR", "CALSCALE:GREGORIAN"];
+    list.forEach(q => {
+      const d = new Date(q.when), e = new Date(d.getTime() + 15 * 6e4);
+      L.push("BEGIN:VEVENT", "UID:pepite-" + q.id + "@adamspartners.fr", "DTSTAMP:" + dt(now), "DTSTART:" + dt(d), "DTEND:" + dt(e),
+        "SUMMARY:" + esc("📣 Publier : " + ((q.r && q.r.article) || "article")), "DESCRIPTION:" + esc("Ouvre Pépite, puis « À publier » et « Ouvrir » : le post est prêt.\n" + location.href.split("#")[0]),
+        "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:PT0M", "DESCRIPTION:" + esc("Publier sur Pépite"), "END:VALARM", "END:VEVENT");
+    });
+    L.push("END:VCALENDAR");
+    const text = L.join("\r\n");
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios){ const w = window.open("data:text/calendar;charset=utf-8," + encodeURIComponent(text), "_blank"); if (w) return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: "text/calendar"})); a.download = "pepite-rappels.ics";
+    document.body.append(a); a.click(); a.remove();
+    setStatus("Ouvre le fichier « pepite-rappels.ics » pour ajouter les rappels à ton agenda.");
   };
 
   // ---------- Historique (gardé sur ce téléphone) ----------
@@ -806,12 +1063,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     await setPhotoFromData(e.photo);
     current = {s:store, p:e.p, r:e.r};
     $("caption").value = e.caption;
-    setMeta([TYPE_LABEL[e.p.type], e.r.article ? "Article : " + e.r.article : "", "Republication"]);
+    setMeta([TYPE_LABEL[e.p.type], e.r.article ? "Article : " + e.r.article : "", "Republication"]); fillAnnonce(e.p, e.r);
     $("preview").classList.add("on");
     await refresh();
     $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
   }
   async function markSold(e){
+    saveHist(loadHist().map(x => x.id === e.id ? Object.assign(x, {sold:true}) : x)); renderHist();
+    setMode("one");
     await setPhotoFromData(e.photo);
     setRadio("ptype", "vendu"); applyType();
     $("vItem").value = e.r.article || e.p.item || e.p.what || "";
@@ -824,7 +1083,12 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const el = $("streak"); if (!el) return;
     const now = new Date(), day = (now.getDay() + 6) % 7, monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
     const n = loadHist().filter(e => new Date(e.date) >= monday).length;
-    el.textContent = n === 0 ? "🎯 Objectif de la semaine : 3 posts ou plus" : `🔥 ${n} post${n > 1 ? "s" : ""} cette semaine${n >= 3 ? " : bravo, continue comme ça !" : " · objectif : 3 ou plus"}`;
+    let txt = n === 0 ? "🎯 Objectif de la semaine : 3 posts ou plus" : `🔥 ${n} post${n > 1 ? "s" : ""} cette semaine${n >= 3 ? " : bravo, continue comme ça !" : " · objectif : 3 ou plus"}`;
+    const st = loadStats();
+    if (st.n) txt += `\n⏱️ Environ ${fmtMin(st.n * MIN_PER_POST)} gagnées ce mois-ci (${st.n} post${st.n > 1 ? "s" : ""} préparé${st.n > 1 ? "s" : ""})`;
+    const stale = loadHist().filter(e => (e.p.type === "nouveaute" || e.p.type === "promo") && !e.sold && Date.now() - new Date(e.date).getTime() > 7 * 864e5).length;
+    if (stale) txt += `\n📣 ${stale} article${stale > 1 ? "s" : ""} publié${stale > 1 ? "s" : ""} il y a plus d’une semaine : « Relancer » dans Mes derniers posts`;
+    el.textContent = txt;
   }
   function renderHist(){
     const list = loadHist(), box = $("hist");
@@ -842,11 +1106,12 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const mk = (label, cls, fn, aria) => { const bt = document.createElement("button"); bt.type = "button"; bt.className = "mini" + (cls ? " " + cls : ""); bt.textContent = label; if (aria) bt.setAttribute("aria-label", aria); bt.onclick = fn; ac.append(bt); };
       mk("Republier", "", () => reuse(e));
       if (e.p.type !== "vendu" && e.p.type !== "info") mk("Vendu !", "sold", () => markSold(e));
+      if ((e.p.type === "nouveaute" || e.p.type === "promo") && !e.sold && Date.now() - new Date(e.date).getTime() > 7 * 864e5) mk("Relancer", "", () => relaunch(e));
       mk("×", "", () => { saveHist(loadHist().filter(x => x.id !== e.id)); renderHist(); }, "Supprimer de l’historique");
       it.append(th, tx, ac); box.append(it);
     });
   }
-  renderHist();
+  renderHist(); renderQueue(); applyMode();
 
   // ---------- Studio photo : lumière auto, détourage, fonds ----------
   const ORT_URL = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.24.3/dist/ort.wasm.bundle.min.mjs";
@@ -1516,6 +1781,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const rest = nets().filter(n => !done[n]);
     if (rest.length) view.net = rest[0];
     renderTabs(); renderPreview(); renderPubList();
+    if (!rest.length && current.queueId) finishQueued();
     const next = rest.length ? ` Au tour de ${NETS[rest[0]]} : bouton suivant.` : " Tout est publié, bravo !";
     pub((downloaded ? `Fichiers téléchargés et texte copié : ajoute-les dans ${NETS[net]}.` : `${NETS[net]} : c’est envoyé, colle le texte en légende s’il n’y est pas.`) + next);
     const btn = $("pubList").querySelector(".pubrow:not(.done)");
