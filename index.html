@@ -116,6 +116,10 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .pbtn{font-size:15px; padding:12px 8px; text-align:center}
 .vh{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden}
 .streak{font-size:14px; color:var(--muted); margin:-4px 0 14px; white-space:pre-line}
+.multibox{border:1.5px dashed var(--line); border-radius:14px; padding:12px; margin:0 0 16px}
+.mrow{display:grid; grid-template-columns:52px 1fr 92px; gap:8px; align-items:center; margin-bottom:8px}
+.mrow .mt{width:52px; height:52px; border-radius:10px; background:var(--field) center/cover no-repeat}
+.mrow input{margin:0}
 .seg{display:grid; grid-template-columns:1fr 1.6fr; gap:8px; margin:0 0 16px}
 .seg input{position:absolute; opacity:0; pointer-events:none}
 .seg label{margin:0; font-size:15px; font-weight:700; text-align:center; border:1.5px solid var(--line); border-radius:12px; padding:11px 8px; cursor:pointer; background:var(--field)}
@@ -326,9 +330,22 @@ canvas{display:block; width:100%; height:auto}
     </div>
     <input type="file" id="photoCam" accept="image/*" capture="environment" class="vh">
     <input type="file" id="photo" accept="image/*" multiple class="vh">
+    <div id="multiBox" class="multibox hidden">
+      <div class="seg" role="radiogroup" aria-label="Contenu du carrousel" style="grid-template-columns:1fr 1fr; margin-bottom:8px">
+        <input type="radio" name="cmode" id="cm1" value="one" checked><label for="cm1">1 article, plusieurs photos</label>
+        <input type="radio" name="cmode" id="cm2" value="multi"><label for="cm2">Plusieurs articles</label>
+      </div>
+      <div id="multiList" class="hidden">
+        <p class="hintline">Le texte présentera chaque article en une ligne. Nom et prix sont facultatifs : sans nom, l’article est reconnu sur la photo ; sans prix, aucun prix n’est cité. 6 articles maximum.</p>
+        <div id="multiRows"></div>
+        <label for="mRange">Fourchette de prix <span class="hint">(facultatif)</span></label>
+        <input type="text" id="mRange" placeholder="Ex. de 5 à 59 €">
+      </div>
+    </div>
 
     <!-- Nouveauté -->
     <div data-for="nouveaute">
+      <div id="singleFields">
       <label for="nItem"><span id="nItemL">Article</span> <span class="hint">(facultatif, sinon identification automatique)</span></label>
       <input type="text" id="nItem" placeholder="Ex. Machine à café Delonghi Magnifica">
       <div class="row">
@@ -342,6 +359,7 @@ canvas{display:block; width:100%; height:auto}
             <option>Neuf</option><option>Comme neuf</option><option>Très bon état</option><option selected>Bon état</option><option>État correct</option><option>À réparer</option><option>À rénover</option>
           </select>
         </div>
+      </div>
       </div>
       <label for="nNote">Précision <span class="hint">(facultatif)</span></label>
       <input type="text" id="nNote" placeholder="Ex. testée en magasin, garantie 3 mois">
@@ -771,17 +789,41 @@ canvas{display:block; width:100%; height:auto}
     $("photoHint").textContent = t === "nouveaute" ? "(l’article est identifié à partir de la photo)" : t === "vendu" ? "(la photo de l’article vendu)" : "(facultatif)";
   }
   document.querySelectorAll('input[name="ptype"]').forEach(r => r.addEventListener("change", applyType));
+  document.querySelectorAll('input[name="ptype"]').forEach(r => r.addEventListener("change", () => renderMulti()));
   applyType();
 
   // ---------- Photo ----------
-  let photos = [], photoBlob = null, photoImg = null;
+  let photos = [], photoBlob = null, photoImg = null, multiVals = [];
+  const multiOk = () => photos.length > 1 && ["nouveaute", "info"].includes(radioVal("ptype"));
+  const isMulti = () => multiOk() && radioVal("cmode") === "multi";
+  function renderMulti(){
+    const show = multiOk(), multi = isMulti();
+    $("multiBox").classList.toggle("hidden", !show);
+    $("multiList").classList.toggle("hidden", !multi);
+    $("singleFields").classList.toggle("hidden", multi);
+    const box = $("multiRows"); box.innerHTML = "";
+    if (!multi) return;
+    photos.slice(0, 6).forEach((ph, i) => {
+      const v = multiVals[i] || (multiVals[i] = {name: "", price: ""});
+      const row = document.createElement("div"); row.className = "mrow";
+      const t = document.createElement("div"); t.className = "mt";
+      if (ph.blob) t.style.backgroundImage = `url(${ph.turl || (ph.turl = URL.createObjectURL(ph.blob))})`;
+      const n = document.createElement("input"); n.type = "text"; n.placeholder = "Article " + (i + 1); n.value = v.name;
+      n.setAttribute("aria-label", "Nom de l’article " + (i + 1)); n.oninput = () => { v.name = n.value; };
+      const pr = document.createElement("input"); pr.type = "text"; pr.inputMode = "decimal"; pr.placeholder = "Prix"; pr.value = v.price;
+      pr.setAttribute("aria-label", "Prix de l’article " + (i + 1)); pr.oninput = () => { v.price = pr.value; };
+      row.append(t, n, pr); box.append(row);
+    });
+    if (photos.length > 6){ const m = document.createElement("p"); m.className = "hintline"; m.textContent = `Seuls les 6 premiers articles sont présentés dans le texte ; les ${photos.length - 6} autres photos restent dans le carrousel.`; box.append(m); }
+  }
+  document.querySelectorAll('input[name="cmode"]').forEach(r => r.addEventListener("change", renderMulti));
   async function handleFiles(input){
     const list = Array.from(input.files || []).slice(0, 20);
     if (!list.length) return;
     try {
       const out = [];
       for (const f of list){ const img = await loadImage(f); out.push({img, blob: await downscale(img, 1280), enh: autoEnhance(img)}); }
-      photos = out; photoImg = out[0].img; photoBlob = out[0].blob;
+      photos = out; photoImg = out[0].img; photoBlob = out[0].blob; multiVals = []; $("mRange").value = ""; renderMulti();
       $("thumb").style.backgroundImage = `url(${URL.createObjectURL(photoBlob)})`; $("thumb").textContent = "";
       $("photoLabel").textContent = out.length > 1 ? `${out.length} photos ajoutées · changer` : "Photo ajoutée · changer";
       if (bgMode() !== "none") applyBackground(); else if (current.s) refresh();
@@ -812,14 +854,18 @@ canvas{display:block; width:100%; height:auto}
   const RELAY_URL = "https://pepite.throbbing-glade-a7b3.workers.dev";
   const relayReady = () => RELAY_URL && !/TON-SOUS-DOMAINE/.test(RELAY_URL);
 
-  async function askRelay(prompt, code){
-    let image = null;
-    if (photoBlob) image = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej;
-      r.readAsDataURL(photoBlob);
-    });
-    const resp = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({code, prompt, image})});
+  const b64 = (blob) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+  async function askRelay(prompt, code, p){
+    let image = null, images = null;
+    if (p && p.multi && photos.length > 1){
+      images = [];   // une photo par article, allégée pour rester rapide et économique
+      for (const ph of photos.slice(0, 6)) images.push(await b64(await downscale(ph.img, 768)));
+    } else if (photoBlob) image = await b64(photoBlob);
+    const resp = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(images ? {code, prompt, images} : {code, prompt, image})});
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok){
       if (data.error === "quota") throw new Error(`Quota du mois atteint (${data.limite || 150} posts) : il repart à zéro le 1er du mois prochain. Texte créé avec les modèles de base.`);
@@ -869,6 +915,11 @@ canvas{display:block; width:100%; height:auto}
 
   function collectPost(){
     const p = collectPostBase();
+    if (isMulti()){
+      p.multi = true; p.range = $("mRange").value.trim();
+      p.items = photos.slice(0, 6).map((_, i) => ({name: ((multiVals[i] || {}).name || "").trim(), price: ((multiVals[i] || {}).price || "").trim()}));
+      if (p.type === "nouveaute"){ p.item = ""; p.price = ""; p.state = ""; }
+    }
     p.tone = radioVal("ptone") || (store && store.tone) || "";
     return p;
   }
@@ -896,13 +947,31 @@ canvas{display:block; width:100%; height:auto}
     if (s.sign) out.push("Termine le texte (juste avant les horaires) par cette signature exacte : « " + s.sign + " ».");
     return out.join("\n") + "\n";
   }
-  function buildPrompt(s, p){
+  const isVous = (p, s) => /vouvoie/.test((p && p.tone) || (s && s.tone) || "");
+  function toneRule(p, s, strict){
+    const r = isVous(p, s)
+      ? "- VOUVOIEMENT OBLIGATOIRE : adresse-toi aux clients en les vouvoyant (vous, votre, vos) dans TOUT le texte, y compris l’accroche, la question finale et l’appel à l’action. N’utilise jamais « tu », « te », « toi », « ton », « ta », « tes » ni « t’ »."
+      : "- Tutoie les clients (tu, ton, ta, tes) dans tout le texte, de façon cohérente.";
+    return r + (strict ? "\n- ATTENTION : ta proposition précédente ne respectait pas cette règle. Réécris tout le texte en la respectant strictement." : "");
+  }
+  // Vérifie le texte reçu : si le vouvoiement est demandé et que le texte tutoie, on redemande une fois
+  const TU_RE = /(^|[^\p{L}])(tu|toi|te|ton|ta|tes)(?=[^\p{L}]|$)|(^|[^\p{L}])t[’']\p{L}/iu;
+  async function toneCheck(p, r, again){
+    if (!r || !r.texte || !isVous(p, store) || !TU_RE.test(r.texte)) return r;
+    try { const r2 = await again(); if (r2 && r2.texte && !TU_RE.test(r2.texte)) return r2; } catch(e){}
+    return r;
+  }
+  function buildPrompt(s, p, strict){
     const typeDesc = {
       nouveaute: `Post « ${TYPE_LABEL.nouveaute} » : ${prof().newDesc}. Produit saisi par le commerçant : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer)"}.${prof().state ? " État : " + p.state + "." : ""} Précision : ${p.note || "aucune"}.`,
       promo: `Post « promo ». Ce qui est en promo : ${p.what || "(non précisé)"}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. Jusqu’au : ${p.until || "(non précisé)"}. Utilise exactement ces montants, n’en calcule pas d’autres.`,
       vendu: `Post « ${TYPE_LABEL.vendu} » : ${prof().soldDesc} Produit : ${p.item || "(non saisi, identifie-le sur la photo)"}. Parti en : ${p.delay || "(non précisé, n’invente pas de délai)"}. Accroche courte et festive.`,
       info: `Post « info magasin ». Sujet : ${p.topic}. Détails : ${p.detail || "aucun"}.`
     }[p.type];
+    const multiDesc = p.multi ? `Post « ${p.type === "info" ? "info magasin" : TYPE_LABEL.nouveaute} » qui présente PLUSIEURS articles différents (${p.items.length}), un par photo, dans l’ordre des photos.${p.type === "info" ? " Sujet : " + p.topic + ". Détails : " + (p.detail || "aucun") + "." : ""}
+Articles, dans l’ordre des photos :
+${p.items.map((it, i) => `- Photo ${i + 1} : ${it.name || "(non saisi, identifie-le sur la photo)"}${it.price ? ", prix : " + normPrice(it.price) : ", prix non communiqué (n’en invente pas)"}`).join("\n")}
+${p.range ? "Fourchette de prix à citer telle quelle : " + p.range + "." : "Pas de fourchette de prix."}${p.note ? " Précision : " + p.note + "." : ""}` : null;
     return `Tu écris des publications Facebook/Instagram pour ${prof().intro}.
 
 Magasin : ${s.name}${s.city ? ", " + s.city : ""}.
@@ -910,32 +979,60 @@ Ton : ${p.tone || s.tone}. Émojis : ${s.emoji}.
 Horaires et adresse à rappeler en fin de post : ${s.hours || "(non fournis, n’en invente pas)"}.
 Hashtags fixes du magasin : ${s.tags || "(aucun)"}.
 ${identLines(s)}
-${typeDesc}
-${photoBlob ? "Une photo est jointe : c’est la photo prise par le magasin." : "Pas de photo jointe."}
+${multiDesc || typeDesc}
+${p.multi ? p.items.length + " photos sont jointes, une par article, dans le même ordre que la liste." : photoBlob ? "Une photo est jointe : c’est la photo prise par le magasin." : "Pas de photo jointe."}
 
 Règles :
+${toneRule(p, s, strict)}
 - N’invente jamais de prix, de défaut, de garantie, de marque ou de date qui ne sont pas donnés ou clairement visibles sur la photo.
 - Si tu identifies l’article sur la photo, nomme-le précisément (type, et marque/modèle seulement si visible). Si tu n’es pas sûr, reste générique et mets la confiance à « faible ».
 ${prof().rules.join("\n")}
 - Dans les deux premières lignes, cite naturellement le type d’article et la ville du magasin (${s.city || "la ville"}) : ce sont les mots que les clients tapent dans la recherche Instagram.
 - Termine le texte, juste avant les horaires, par une question courte et simple qui donne envie de répondre en commentaire, en plus de l’invitation à passer en magasin.
-- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (${prof().cta}).
+${p.multi ? "- Structure : une accroche d’ensemble en première ligne (par exemple un arrivage), puis UNE ligne courte par article, dans l’ordre des photos, qui commence par " + (s.emoji === "aucun" ? "un tiret" : "un émoji adapté à l’article") + " et donne son nom simple (avec son prix seulement s’il est fourni), sans entrer dans les détails ; puis la question et l’appel à l’action (" + prof().cta + ")." : "- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (" + prof().cta + ")."}
 - Termine par les horaires/adresse s’ils sont fournis.
+- Aère le texte pour qu’il se lise bien sur téléphone : laisse une ligne vide (\\n\\n) entre l’accroche, le corps du texte, la question finale, la signature et les horaires. Les lignes d’une même liste restent collées entre elles.
 - Propose au maximum 5 hashtags pertinents au total, en comptant les hashtags fixes du magasin.
 
 - Écris toujours les prix avec le symbole €, par exemple « 59 € ».
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots","texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${prof().annonce && (p.type === "nouveaute" || p.type === "promo") ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${prof().annonce && (p.type === "nouveaute" || p.type === "promo") ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${prof().annonce && !p.multi && (p.type === "nouveaute" || p.type === "promo") ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${prof().annonce && !p.multi && (p.type === "nouveaute" || p.type === "promo") ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
   }
 
   // ---------- Mode démo sans IA ----------
+  // Aère le texte : une ligne vide entre l'accroche, le corps, la question, la signature et les horaires
+  function aerate(t, s){
+    s = s || {};
+    const L = String(t || "").replace(/\r/g, "").replace(/\\n/g, "\n").split("\n").map(l => l.trim());
+    const key = (v) => (v || "").trim().slice(0, 14).toLowerCase();
+    const sig = key(s.sign), hrs = key(s.hours);
+    let lastQ = -1;
+    for (let i = L.length - 1; i >= 0; i--) if (L[i] && /\?/.test(L[i].slice(-6))){ lastQ = i; break; }
+    const out = [];
+    L.forEach((l, i) => {
+      if (!l){ if (out.length && out[out.length - 1] !== "") out.push(""); return; }
+      const low = l.toLowerCase(), prev = out.length ? out[out.length - 1] : null;
+      const brk = prev !== null && prev !== "" && (
+        out.filter(Boolean).length === 1 ||          // après l'accroche
+        i === lastQ ||                               // avant la question finale
+        (sig && low.includes(sig)) ||                // avant la signature
+        (hrs && low.includes(hrs)) || /^📍/.test(l)); // avant les horaires
+      if (brk) out.push("");
+      out.push(l);
+    });
+    return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
   function fallback(s, p){
     const tu = /tutoie/.test(p.tone || s.tone);
     const em = s.emoji === "aucun" ? (x)=>"" : (x)=>x;
     const end = (s.sign ? "\n" + s.sign : "") + (s.hours ? `\n\n${em("📍 ")}${s.hours}` : "");
     let article, accroche, texte;
-    if (p.type === "nouveaute"){
+    if (p.type === "nouveaute" && p.multi){
+      const names = p.items.map(it => (it.name || "") + (it.name && it.price ? " à " + normPrice(it.price) : "")).filter(Boolean);
+      article = "Arrivage"; accroche = "Nouvel arrivage";
+      texte = `${em("✨ ")}Nouvel arrivage chez ${s.name} !\n${names.length ? names.map(n => "– " + n.charAt(0).toUpperCase() + n.slice(1)).join("\n") : p.items.length + " nouveautés à découvrir en photos."}\n${p.range ? "Prix " + p.range + ".\n" : ""}${tu ? "Passe vite les découvrir" : "Passez vite les découvrir"} avant qu’ils partent${em(" 👀")}${end}`;
+    } else if (p.type === "nouveaute"){
       article = p.item || (prof().state ? "Nouvel article" : "Nouveau produit");
       accroche = p.item ? p.item.split(" ").slice(0,4).join(" ") : "Tout juste arrivé";
       texte = `${em("✨ ")}${(store && store.kind) === "bouche" ? "Aujourd’hui" : "Nouveauté"} chez ${s.name} !\n${article}${p.state ? ", " + p.state.toLowerCase() : ""}${p.price ? ", à " + normPrice(p.price) : ""}.\n${p.note ? p.note.charAt(0).toUpperCase()+p.note.slice(1)+".\n" : ""}${prof().fbNew[tu ? 0 : 1]}${em(" 👀")}${end}`;
@@ -976,14 +1073,16 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const relayOn = relayReady() && store.code;
     if (relayOn) {
       setStatus(photoBlob ? "Identification de l’article et rédaction en cours…" : "Rédaction en cours…");
-      try { result = await askRelay(buildPrompt(store, p), store.code); }
+      try { result = await askRelay(buildPrompt(store, p), store.code, p); }
       catch (e) { setStatus(e.message || "La génération par IA n’a pas abouti : texte créé avec les modèles de base.", true); result = null; }
     }
+    if (result && result.texte) { try { result = await toneCheck(p, result, () => genAI(p, true)); } catch(e){} }
     if (!result || !result.texte) { result = fallback(store, p); mode = "demo"; if (!relayOn) setStatus("Mode démo : saisis ton code d’accès à l’étape 1 pour activer l’IA."); }
     else setStatus("");
 
     current = {s:store, p, r:result};
     const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(result.hashtags || [])])).slice(0, 5);
+    result.texte = aerate(result.texte, store);
     $("caption").value = result.texte.trim() + "\n\n" + tags.join(" ");
     bumpStats(); fillAnnonce(p, result);
     const meta = $("meta"); meta.innerHTML = "";
@@ -1000,9 +1099,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     busy = false; $("generate").disabled = false;
   };
 
-  async function genAI(p){
+  async function genAI(p, strict){
     if (!(relayReady() && store.code)) return null;
-    return await askRelay(buildPrompt(store, p), store.code);
+    return await askRelay(buildPrompt(store, p, strict), store.code, p);
   }
 
   // ---------- Temps gagné (estimation : ~12 min par post entre retouche, mise en page et rédaction) ----------
@@ -1138,7 +1237,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
   // ---------- Annonce Leboncoin / Marketplace ----------
   function fillAnnonce(p, r){
-    const on = p && prof().annonce && (p.type === "nouveaute" || p.type === "promo");
+    const on = p && !p.multi && prof().annonce && (p.type === "nouveaute" || p.type === "promo");
     $("annBtn").classList.toggle("hidden", !on); $("annBox").classList.add("hidden"); $("annBtn").textContent = "🏷️ Annonce Leboncoin";
     if (!on) return;
     const s = store || {};
@@ -1233,10 +1332,10 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       photos = [{img: b.img, blob: b.blob}]; photoImg = b.img; photoBlob = b.blob;
       const p = {type: "nouveaute", item: "", price: b.price.trim(), state: prof().state ? b.state : "", note: "", tone};
       let r = null;
-      try { r = await genAI(p); } catch(e){ r = null; msg = e.message || ""; }
+      try { r = await genAI(p); if (r && r.texte) r = await toneCheck(p, r, () => genAI(p, true)); } catch(e){ r = null; msg = e.message || ""; }
       if (!r || !r.texte){ r = fallback(store, p); demo++; }
       const tags = Array.from(new Set([...(store.tags ? store.tags.split(/\s+/).filter(Boolean) : []), ...(r.hashtags || [])])).slice(0, 5);
-      const item = {id: Date.now() + i, p, r, caption: r.texte.trim() + "\n\n" + tags.join(" "), thumb: thumbData(b.img, 200), n: 1};
+      const item = {id: Date.now() + i, p, r, caption: aerate(r.texte, store) + "\n\n" + tags.join(" "), thumb: thumbData(b.img, 200), n: 1};
       try { await idbPut(item.id + "_0", b.blob); } catch(e){ item.photo = thumbData(b.img, 1280); }
       q.push(item); saveQueue(q); bumpStats(); made++;
       if (i < batch.length - 1) await sleep(500);
@@ -1279,6 +1378,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     }
     if (!out.length && q.p.type !== "info"){ setStatus("La photo de ce post n’est plus disponible sur ce téléphone.", true); return; }
     photos = out; photoImg = out[0] ? out[0].img : null; photoBlob = out[0] ? out[0].blob : null;
+    multiVals = q.p.multi ? (q.p.items || []).map(x => ({name: x.name || "", price: x.price || ""})) : [];
+    $(q.p.multi ? "cm2" : "cm1").checked = true; $("mRange").value = q.p.range || ""; renderMulti();
     $("thumb").style.backgroundImage = q.thumb ? `url(${q.thumb})` : ""; $("thumb").textContent = q.thumb ? "" : "＋";
     $("photoLabel").textContent = out.length > 1 ? `${out.length} photos · changer` : "Photo du post prêt · changer";
     current = {s: store, p: q.p, r: q.r, queueId: q.id};
@@ -1331,7 +1432,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   async function setPhotoFromData(d){
     if (!d){ photos = []; photoImg = null; photoBlob = null; $("thumb").style.backgroundImage = ""; $("thumb").textContent = "＋"; $("photoLabel").textContent = "Ajouter une photo"; return; }
     const img = await imgFromData(d), blob = await downscale(img, 1280);
-    photos = [{img, blob, enh: autoEnhance(img)}]; photoImg = img; photoBlob = blob;
+    photos = [{img, blob, enh: autoEnhance(img)}]; photoImg = img; photoBlob = blob; renderMulti();
     $("thumb").style.backgroundImage = `url(${d})`; $("thumb").textContent = "";
     $("photoLabel").textContent = "Photo reprise de l’historique · changer";
   }
@@ -1720,7 +1821,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function slides(){
     const list = [{t:"cover", ph: photos[0] || null}];
     if (kind() === "carousel"){
-      photos.slice(1).forEach(ph => list.push({t:"photo", ph}));
+      photos.slice(1).forEach((ph, k) => list.push({t:"photo", ph, n: k + 1}));
       if (current.s && current.s.hours) list.push({t:"infos", ph:null});
     }
     return list;
@@ -1795,6 +1896,29 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     x.textBaseline = "alphabetic";
   }
 
+  // Nom (et prix) d'un article sur son image du carrousel
+  function drawItemLabel(x, F, n){
+    const {p, r} = current, W = F.w, H = F.h, tall = H > 1500;
+    const it = (p.items || [])[n] || {}, name = it.name || ((r && r.articles) || [])[n] || "", price = it.price ? normPrice(it.price) : "";
+    if (!name && !price) return;
+    const font = '800 80px "Bricolage Grotesque", sans-serif';
+    const lines = name ? wrap(x, name.charAt(0).toUpperCase() + name.slice(1), W - F.side - F.right - (!tall && price ? 320 : 0), font).slice(0, 2) : [];
+    const lastY = H - F.bottom - 100, firstY = lastY - Math.max(0, lines.length - 1) * 86;
+    x.save(); x.font = font; x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.45)"; x.shadowBlur = 18;
+    lines.forEach((l, i) => x.fillText(l, F.side, firstY + i * 86)); x.restore();
+    if (price){
+      x.save();
+      x.translate(W - F.right - 165, tall ? firstY - 170 : H - F.bottom - 190); x.rotate(-0.12);
+      x.font = '800 70px "Bricolage Grotesque", sans-serif';
+      const tw = Math.max(190, x.measureText(price).width + 104), th = 120;
+      x.fillStyle = "#FFD23F";
+      x.beginPath(); x.moveTo(-tw/2+38,-th/2); x.lineTo(tw/2,-th/2); x.lineTo(tw/2,th/2); x.lineTo(-tw/2+38,th/2); x.lineTo(-tw/2,0); x.closePath(); x.fill();
+      x.fillStyle = "#1B2A4A"; x.beginPath(); x.arc(-tw/2+32,0,11,0,Math.PI*2); x.fill();
+      x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(price, 18, 6);
+      x.restore();
+    }
+  }
+
   // t en secondes ; 99 = image finale fixe
   function drawSlide(x, F, slide, idx, total, t){
     const {s, p, r} = current; if (!s) return;
@@ -1807,6 +1931,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (slide.t === "photo"){
       drawBg(x, F, slide.ph, brand, 99);
       drawPill(x, F.side, F.top, (idx + 1) + " / " + total, tcolor);
+      if (p.multi && slide.n < 6) drawItemLabel(x, F, slide.n);
       drawBand(x, F, s, brand, true);
       return;
     }
@@ -1839,9 +1964,11 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(txt, W - F.right - w + 22, F.top + 38); x.textBaseline = "alphabetic";
     }
 
-    const tagText = p.type === "nouveaute" ? (p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.tag || "") : "";
+    const tagText = p.type === "nouveaute" ? (p.multi ? (p.range && p.range.replace(/^de\s+/i, "").length <= 14 ? p.range.replace(/^de\s+/i, "") : "") : p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.tag || "") : "";
     const headFont = '800 96px "Bricolage Grotesque", sans-serif';
-    const maxW = W - F.side - F.right - (!tall && tagText ? 320 : 0);
+    let tagRoom = 0;
+    if (!tall && tagText){ x.font = '800 76px "Bricolage Grotesque", sans-serif'; tagRoom = Math.max(320, 165 + Math.max(200, x.measureText(tagText).width + 110) / 2 + 30); }
+    const maxW = W - F.side - F.right - tagRoom;
     const lines = wrap(x, r.accroche || r.article || label, maxW, headFont).slice(0, 3);
     const a = ease((t - 0.6) / 0.5), dy = (1 - a) * 60;
     x.globalAlpha = a; x.fillStyle = (!slide.ph && isLight(brand)) ? "#1B2A4A" : "#fff"; x.font = headFont;
