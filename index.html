@@ -253,11 +253,16 @@ canvas{display:block; width:100%; height:auto}
       <label for="sCode">Code d’accès <span class="hint">(fourni par Adams Partners, il active l’IA)</span></label>
       <input type="text" id="sCode" autocomplete="off" autocapitalize="characters" placeholder="Ex. BERGERAC-7F3K">
       <button class="link" id="fetchCfg" type="button">Déjà paramétré par un collègue ? Récupérer les réglages du magasin</button>
-      <label>Ton des publications</label>
-      <div class="chips" role="radiogroup" aria-label="Ton des publications">
-        <input type="radio" name="tone" id="t1" value="chaleureux et proche, on tutoie" checked><label for="t1">Chaleureux, tutoiement</label>
-        <input type="radio" name="tone" id="t2" value="dynamique et enthousiaste, on tutoie"><label for="t2">Dynamique</label>
-        <input type="radio" name="tone" id="t3" value="sobre et professionnel, on vouvoie"><label for="t3">Sobre, vouvoiement</label>
+      <label>On s’adresse aux clients en…</label>
+      <div class="chips" role="radiogroup" aria-label="Tutoiement ou vouvoiement">
+        <input type="radio" name="addr" id="a1" value="tutoie" checked><label for="a1">Tutoiement (tu)</label>
+        <input type="radio" name="addr" id="a2" value="vouvoie"><label for="a2">Vouvoiement (vous)</label>
+      </div>
+      <label>Style par défaut</label>
+      <div class="chips" role="radiogroup" aria-label="Style par défaut">
+        <input type="radio" name="tone" id="t1" value="chaleureux et proche" checked><label for="t1">Chaleureux</label>
+        <input type="radio" name="tone" id="t2" value="dynamique et enthousiaste"><label for="t2">Dynamique</label>
+        <input type="radio" name="tone" id="t3" value="sobre et professionnel"><label for="t3">Sobre</label>
       </div>
       <label>Émojis</label>
       <div class="chips" role="radiogroup" aria-label="Émojis">
@@ -428,11 +433,16 @@ canvas{display:block; width:100%; height:auto}
       <div class="blist" id="bList"></div>
     </div>
 
-    <label>Ton du post</label>
-    <div class="chips" role="radiogroup" aria-label="Ton du post">
-      <input type="radio" name="ptone" id="pt1" value="chaleureux et proche, on tutoie"><label for="pt1">Chaleureux</label>
-      <input type="radio" name="ptone" id="pt2" value="dynamique et enthousiaste, on tutoie"><label for="pt2">Dynamique</label>
-      <input type="radio" name="ptone" id="pt3" value="sobre et professionnel, on vouvoie"><label for="pt3">Sobre</label>
+    <label>Style du post</label>
+    <div class="chips" role="radiogroup" aria-label="Style du post">
+      <input type="radio" name="ptone" id="pt1" value="chaleureux et proche"><label for="pt1">Chaleureux</label>
+      <input type="radio" name="ptone" id="pt2" value="dynamique et enthousiaste"><label for="pt2">Dynamique</label>
+      <input type="radio" name="ptone" id="pt3" value="sobre et professionnel"><label for="pt3">Sobre</label>
+    </div>
+    <label>On s’adresse aux clients en…</label>
+    <div class="chips" role="radiogroup" aria-label="Tu ou vous pour ce post">
+      <input type="radio" name="paddr" id="pa1" value="tutoie"><label for="pa1">Tu</label>
+      <input type="radio" name="paddr" id="pa2" value="vouvoie"><label for="pa2">Vous</label>
     </div>
     <button class="btn big" id="generate" type="button">Générer le post</button>
     <div class="status" id="status" role="status" aria-live="polite"></div>
@@ -691,7 +701,7 @@ canvas{display:block; width:100%; height:auto}
       city: $("sCity").value.trim(),
       hours: $("sHours").value.trim(),
       code: $("sCode").value.trim(),
-      tone: radioVal("tone"),
+      tone: mkTone(radioVal("tone"), radioVal("addr")),
       emoji: radioVal("emoji"),
       tags: $("sTags").value.trim(),
       color: $("sColor").value,
@@ -703,10 +713,15 @@ canvas{display:block; width:100%; height:auto}
       logo: logoData
     };
   }
+  // Le ton = un style (chaleureux, dynamique, sobre) + tutoiement ou vouvoiement, choisis séparément
+  const styleOf = (t) => String(t || "").split(",")[0].trim() || "chaleureux et proche";
+  const addrOf = (t) => /vouvoie/.test(t || "") ? "vouvoie" : "tutoie";
+  const mkTone = (st, ad) => (st || "chaleureux et proche") + ", on " + (ad || "tutoie");
+  const postTone = () => mkTone(radioVal("ptone") || styleOf(store && store.tone), radioVal("paddr") || addrOf(store && store.tone));
   function fillSetup(s){
-    if (s.tone) { const r = document.querySelector(`input[name="ptone"][value="${s.tone}"]`); if (r) r.checked = true; }
+    if (s.tone){ setRadio("ptone", styleOf(s.tone)); setRadio("paddr", addrOf(s.tone)); }
     $("sName").value = s.name || ""; $("sCity").value = s.city || ""; $("sHours").value = s.hours || ""; $("sCode").value = s.code || "";
-    $("sTags").value = s.tags || ""; if (s.tone) setRadio("tone", s.tone); if (s.emoji) setRadio("emoji", s.emoji);
+    $("sTags").value = s.tags || ""; if (s.tone){ setRadio("tone", styleOf(s.tone)); setRadio("addr", addrOf(s.tone)); } if (s.emoji) setRadio("emoji", s.emoji);
     setLogo(s.logo || null);
     $("sKind").value = s.kind || "occasion";
     $("sUnique").value = s.unique || ""; $("sSign").value = s.sign || "";
@@ -733,6 +748,7 @@ canvas{display:block; width:100%; height:auto}
     if (!s.name) { $("sName").focus(); $("sName").setAttribute("aria-invalid","true"); return; }
     $("sName").removeAttribute("aria-invalid");
     store = s; applyProfile();
+    setRadio("ptone", styleOf(s.tone)); setRadio("paddr", addrOf(s.tone));   // l'étape 2 reprend aussitôt le ton du magasin
     try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
     collapseSetup();
     shareConfig(s);
@@ -920,7 +936,7 @@ canvas{display:block; width:100%; height:auto}
       p.items = photos.slice(0, 6).map((_, i) => ({name: ((multiVals[i] || {}).name || "").trim(), price: ((multiVals[i] || {}).price || "").trim()}));
       if (p.type === "nouveaute"){ p.item = ""; p.price = ""; p.state = ""; }
     }
-    p.tone = radioVal("ptone") || (store && store.tone) || "";
+    p.tone = postTone();
     return p;
   }
   function collectPostBase(){
@@ -1324,7 +1340,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   async function runBatch(){
     if (!batch.length){ setStatus("Ajoute au moins une photo.", true); return; }
     busy = true; $("generate").disabled = true;
-    const tone = radioVal("ptone") || store.tone || "";
+    const tone = postTone();
     const q = loadQueue(); const keep = {photos, photoImg, photoBlob}; let made = 0, demo = 0, msg = "";
     for (let i = 0; i < batch.length; i++){
       const b = batch[i];
