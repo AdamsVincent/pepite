@@ -471,10 +471,10 @@ canvas{display:block; width:100%; height:auto}
     <label>Fond de la photo</label>
     <div class="chips" role="radiogroup" aria-label="Fond de la photo">
       <input type="radio" name="bgm" id="bg0" value="none" checked><label for="bg0">Photo d’origine</label>
-      <input type="radio" name="bgm" id="bg1" value="white"><label for="bg1">Blanc studio</label>
-      <input type="radio" name="bgm" id="bg2" value="wood"><label for="bg2">Bois</label>
-      <input type="radio" name="bgm" id="bg3" value="concrete"><label for="bg3">Béton</label>
-      <input type="radio" name="bgm" id="bg4" value="brand"><label for="bg4">Couleur du magasin</label>
+      <input type="radio" name="bgm" id="bg1" value="blur"><label for="bg1">Fond flouté</label>
+      <input type="radio" name="bgm" id="bg2" value="frame"><label for="bg2">Cadre vitrine</label>
+      <input type="radio" name="bgm" id="bg3" value="mag"><label for="bg3">Carte magazine</label>
+      <input type="radio" name="bgm" id="bg4" value="white"><label for="bg4">Détourage fond blanc</label>
     </div>
     <div class="chips" style="margin-top:10px">
       <input type="checkbox" id="autoLight" checked><label for="autoLight">Lumière auto</label>
@@ -842,7 +842,7 @@ canvas{display:block; width:100%; height:auto}
       photos = out; photoImg = out[0].img; photoBlob = out[0].blob; multiVals = []; $("mRange").value = ""; renderMulti();
       $("thumb").style.backgroundImage = `url(${URL.createObjectURL(photoBlob)})`; $("thumb").textContent = "";
       $("photoLabel").textContent = out.length > 1 ? `${out.length} photos ajoutées · changer` : "Photo ajoutée · changer";
-      if (bgMode() !== "none") applyBackground(); else if (current.s) refresh();
+      if (needsCut()) applyBackground(); else if (current.s) refresh();
       if ($("vidOn") && $("vidOn").checked) prepLive();
     } catch (err) {
       setStatus("Une photo n’a pas pu être lue. Essaie une autre photo.", true);
@@ -1402,7 +1402,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     $("caption").value = q.caption;
     setMeta([TYPE_LABEL[q.p.type], q.r.article ? "Article : " + q.r.article : "", "Post prêt"]); fillAnnonce(q.p, q.r);
     $("preview").classList.add("on"); fillEdit(); $("keep").classList.add("hidden");
-    if (bgMode() !== "none") applyBackground();
+    if (needsCut()) applyBackground();
     await refresh();
     $("preview").scrollIntoView({behavior: reduced() ? "auto" : "smooth", block:"start"});
   }
@@ -1517,6 +1517,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   const srcW = (s) => s.naturalWidth || s.width, srcH = (s) => s.naturalHeight || s.height;
   const autoOn = () => { const el = $("autoLight"); return !el || el.checked; };
   const bgMode = () => radioVal("bgm") || "none";
+  const LAYOUTS = ["blur", "frame", "mag"];               // mises en page sans détourage : fiables avec toutes les photos
+  const needsCut = () => bgMode() === "white";
 
   // Retouche automatique : niveaux, balance des blancs douce, exposition, légère saturation
   function autoEnhance(img){
@@ -1701,7 +1703,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   }
   // Photo vivante : l'article détouré s'anime devant son décor (vidéo)
   async function prepLive(){
-    if (!photos[0] || photos[0].mask || bgMode() === "none") return;
+    if (!photos[0] || photos[0].mask || !needsCut()) return;
     $("bgHint").textContent = SEG.session ? "Préparation de la photo vivante…" : "Préparation de la photo vivante (la première fois, quelques secondes)…";
     try { await computeMask(photos[0]); $("bgHint").textContent = ""; }
     catch (e) { $("bgHint").textContent = "Photo vivante indisponible ici : la vidéo simple sera utilisée."; }
@@ -1782,12 +1784,12 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   async function applyBackground(){
     const mode = bgMode();
     try { localStorage.setItem("pepite-bg", mode); localStorage.setItem("pepite-auto", autoOn() ? "1" : "0"); } catch(e){}
-    if (mode === "none" || !photos.length){ $("bgHint").textContent = ""; if (current.s) refresh(); return; }
+    if (!needsCut() || !photos.length){ $("bgHint").textContent = ""; if (current.s) refresh(); return; }
     const first = !SEG.session;
     $("bgHint").textContent = first ? "Préparation du détourage (la première fois, quelques secondes)…" : "Détourage en cours…";
     try {
       for (const ph of photos) await computeMask(ph);
-      $("bgHint").textContent = "Article détouré. Si le résultat n’est pas net, reviens sur « Photo d’origine ».";
+      $("bgHint").textContent = "Article détouré sur fond blanc. Si le contour n’est pas net, choisissez plutôt « Fond flouté » : il fonctionne avec toutes les photos.";
     } catch (e) {
       console.log(e);
       $("bgHint").textContent = "Le détourage n’a pas pu se lancer ici : la photo d’origine est utilisée.";
@@ -1799,7 +1801,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   document.querySelectorAll('input[name="bgm"]').forEach(r => r.addEventListener("change", applyBackground));
   $("autoLight").addEventListener("change", applyBackground);
   try {
-    const pb = localStorage.getItem("pepite-bg"); if (pb){ const r = document.querySelector(`input[name="bgm"][value="${pb}"]`); if (r) r.checked = true; }
+    let pb = localStorage.getItem("pepite-bg"); if (["wood", "concrete", "brand"].includes(pb)) pb = "blur";
+    if (pb){ const r = document.querySelector(`input[name="bgm"][value="${pb}"]`); if (r) r.checked = true; }
     if (localStorage.getItem("pepite-auto") === "0") $("autoLight").checked = false;
   } catch(e){}
 
@@ -1843,9 +1846,65 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     return list;
   }
 
+  // Mises en page sans détourage : fond flouté, cadre vitrine, carte magazine
+  function blurOf(ph, img){
+    if (!ph._lb || ph._lbSrc !== img){
+      const iw = srcW(img), ih = srcH(img), bw = 36, bh = Math.max(8, Math.round(36 * ih / iw));
+      const c = document.createElement("canvas"); c.width = bw; c.height = bh; c.getContext("2d").drawImage(img, 0, 0, bw, bh);
+      ph._lb = c; ph._lbSrc = img;
+    }
+    return ph._lb;
+  }
+  function coverInto(x, src, l, tp, w, h, z){
+    const iw = srcW(src), ih = srcH(src), sc = Math.max(w / iw, h / ih) * (z || 1);
+    x.drawImage(src, l + (w - iw * sc) / 2, tp + (h - ih * sc) / 2, iw * sc, ih * sc);
+  }
+  function drawLayout(x, F, ph, mode, brand, t){
+    const W = F.w, H = F.h, img = photoSrc(ph), iw = srcW(img), ih = srcH(img), k = W / 1080;
+    const anim = t < DUR + 1, p = anim ? Math.max(0, Math.min(1, t / DUR)) : 1, enter = anim ? ease(t / 0.8) : 1;
+    const z = anim ? 1.06 - 0.06 * ease(p) : 1;                      // en vidéo : léger recul de la caméra
+    const top = F.top - 40 * k, bottom = H - F.bottom - (H > 1500 ? 360 : 300) * k, side = mode === "mag" ? 48 * k : F.side - 20 * k;
+    const deep = isLight(brand) ? shade(brand, -0.45) : brand;
+    x.imageSmoothingQuality = "high";
+    if (mode === "blur"){
+      x.save(); x.filter = "blur(" + Math.round(18 * k) + "px)"; coverInto(x, blurOf(ph, img), -60 * k, -60 * k, W + 120 * k, H + 120 * k, z); x.restore();
+      x.fillStyle = "rgba(0,0,0,.28)"; x.fillRect(0, 0, W, H);
+      const gb = x.createLinearGradient(0, bottom - 60 * k, 0, H); gb.addColorStop(0, "rgba(0,0,0,0)"); gb.addColorStop(1, "rgba(0,0,0,.45)"); x.fillStyle = gb; x.fillRect(0, bottom - 60 * k, W, H);
+      const aw = W - side * 2, ah = bottom - top, sc = Math.min(aw / iw, ah / ih);
+      const w = iw * sc, h = ih * sc, l = (W - w) / 2, tp = top + (ah - h) / 2 + (1 - enter) * 40 * k;
+      x.save(); x.globalAlpha = enter; x.shadowColor = "rgba(0,0,0,.45)"; x.shadowBlur = 60 * k; x.shadowOffsetY = 26 * k;
+      roundRect(x, l, tp, w, h, 34 * k); x.fillStyle = "#000"; x.fill(); x.restore();
+      x.save(); x.globalAlpha = enter; roundRect(x, l, tp, w, h, 34 * k); x.clip(); coverInto(x, img, l, tp, w, h, z); x.restore();
+    } else if (mode === "frame"){
+      x.fillStyle = deep; x.fillRect(0, 0, W, H);
+      const rg = x.createRadialGradient(W * .2, H * .1, 0, W * .2, H * .1, W * .9); rg.addColorStop(0, "rgba(255,255,255,.16)"); rg.addColorStop(1, "rgba(255,255,255,0)");
+      x.fillStyle = rg; x.fillRect(0, 0, W, H);
+      const pad = 24 * k, padB = 84 * k, r = Math.max(0.75, Math.min(1.3, iw / ih));
+      const aw = W - 2 * (F.side + 30 * k), ah = bottom - top - 20 * k;
+      const pw = Math.min(aw, (ah - pad - padB) * r + 2 * pad), inW = pw - 2 * pad, inH = inW / r;
+      const ph2 = inH + pad + padB, cx = W / 2, cy = top + 10 * k + ah / 2;
+      x.save(); x.globalAlpha = enter; x.translate(cx, cy + (1 - enter) * 50 * k); x.rotate(-0.035 + (anim ? 0.01 * Math.sin(t * 0.8) : 0));
+      x.shadowColor = "rgba(0,0,0,.38)"; x.shadowBlur = 50 * k; x.shadowOffsetY = 22 * k;
+      x.fillStyle = "#fff"; x.fillRect(-pw / 2, -ph2 / 2, pw, ph2); x.shadowColor = "transparent";
+      x.save(); x.beginPath(); x.rect(-pw / 2 + pad, -ph2 / 2 + pad, inW, inH); x.clip(); coverInto(x, img, -pw / 2 + pad, -ph2 / 2 + pad, inW, inH, z); x.restore();
+      x.restore();
+    } else {
+      x.fillStyle = "#F4F1EC"; x.fillRect(0, 0, W, H);
+      const panelTop = H - F.bottom - (H > 1500 ? 336 : 345) * k; x.fillStyle = deep; x.fillRect(0, panelTop, W, H - panelTop);
+      const l = side, tp = side, w = W - 2 * side, h = panelTop - side;
+      x.save(); roundRect(x, l, tp, w, h, 40 * k); x.clip();
+      x.save(); x.filter = "blur(" + Math.round(14 * k) + "px)"; coverInto(x, blurOf(ph, img), l - 40 * k, tp - 40 * k, w + 80 * k, h + 80 * k); x.restore();
+      const loss = 1 - Math.min((iw / ih) / (w / h), (w / h) / (iw / ih));
+      if (loss < 0.3) coverInto(x, img, l, tp, w, h, z);
+      else { x.fillStyle = "rgba(0,0,0,.18)"; x.fillRect(l, tp, w, h); const sc = Math.min(w / iw, h / ih) * z; x.drawImage(img, l + (w - iw * sc) / 2, tp + (h - ih * sc) / 2, iw * sc, ih * sc); }
+      x.restore();
+    }
+  }
+
   function drawBg(x, F, ph, brand, t){
     const W = F.w, H = F.h;
     if (ph){
+      if (LAYOUTS.includes(bgMode())){ drawLayout(x, F, ph, bgMode(), brand, kind() === "video" && t <= DUR + 1 ? t : 99); return; }
       if (kind() === "video" && t <= DUR + 1){
         if (bgMode() === "none"){ drawLiveOriginal(x, F, ph, t); return; }
         const lc = cutFor(ph);
@@ -1886,30 +1945,34 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     x.textBaseline = "alphabetic";
     return w;
   }
+  // Signature du magasin : badge en verre dépoli (logo + nom), posé sur le visuel
   function drawBand(x, F, s, brand, hasImg){
-    const W = F.w, H = F.h;
-    const bandTop = H - F.bottom - 58;
-    const bandH = (F.fill || F.bottom <= 100) ? H - bandTop : 120;
-    x.fillStyle = hasImg ? brand : shade(brand, -0.3);
-    x.fillRect(0, bandTop, W, bandH);
-    x.fillStyle = isLight(brand) && hasImg ? "#1B2A4A" : "#fff";
-    x.textBaseline = "middle";
-    const cy = bandTop + (F.fill ? 60 : Math.min(bandH, 140) / 2);
-    let tx = F.side;
-    if (s.logo && logoImg){
-      const lh = F.fill ? 88 : 80, lw = Math.min(360, logoImg.naturalWidth * lh / logoImg.naturalHeight);
-      const dh = lw * logoImg.naturalHeight / logoImg.naturalWidth;
-      x.save(); x.fillStyle = "#fff"; roundRect(x, F.side, cy - dh/2 - 8, lw + 24, dh + 16, 14); x.fill(); x.restore();
-      x.drawImage(logoImg, F.side + 12, cy - dh/2, lw, dh);
-      tx = F.side + lw + 50;
-    }
+    const W = F.w, H = F.h, k = W / 1080;
+    const cy = H - F.bottom + 2, bh = 104 * k, top = cy - bh / 2, l = F.side;
     const txt = s.logo && logoImg ? s.name : s.name + (s.city ? " · " + s.city : "");
-    const maxW = W - tx - (F.right || 60);
-    let fs = F.fill ? 52 : 46;
+    let lw = 0, lhh = 66 * k;
+    if (s.logo && logoImg) lw = Math.min(230 * k, logoImg.naturalWidth * lhh / logoImg.naturalHeight);
+    const pad = 12 * k, lead = lw ? lw + 22 * k + pad + 20 * k : 34 * k, tail = 36 * k;
+    const maxText = W - l - (F.right || 60) - lead - tail;
+    let fs = 46 * k;
     x.font = `700 ${fs}px "Atkinson Hyperlegible", sans-serif`;
-    while (x.measureText(txt).width > maxW && fs > 28){ fs -= 2; x.font = `700 ${fs}px "Atkinson Hyperlegible", sans-serif`; }
-    x.fillText(txt, tx, cy);
-    x.textBaseline = "alphabetic";
+    while (x.measureText(txt).width > maxText && fs > 26 * k){ fs -= 2; x.font = `700 ${fs}px "Atkinson Hyperlegible", sans-serif`; }
+    const bw = lead + x.measureText(txt).width + tail;
+    // verre : copie floutée de l'image dessous, teinte sombre (lisible même sans flou) et liseré clair
+    x.save(); roundRect(x, l, top, bw, bh, bh / 2); x.clip();
+    try { x.filter = "blur(" + Math.round(16 * k) + "px)"; x.drawImage(x.canvas, l - 30, top - 30, bw + 60, bh + 60, l - 30, top - 30, bw + 60, bh + 60); } catch(e){}
+    x.filter = "none";
+    x.fillStyle = hasImg ? "rgba(18,22,34,.34)" : "rgba(0,0,0,.18)"; x.fillRect(l, top, bw, bh);
+    x.fillStyle = "rgba(255,255,255,.12)"; x.fillRect(l, top, bw, bh);
+    x.restore();
+    x.save(); roundRect(x, l + 1, top + 1, bw - 2, bh - 2, bh / 2 - 1); x.lineWidth = 2 * k; x.strokeStyle = "rgba(255,255,255,.42)"; x.stroke(); x.restore();
+    if (lw){
+      const cw = lw + 22 * k, ch = bh - 2 * pad;
+      x.save(); x.fillStyle = "#fff"; roundRect(x, l + pad, top + pad, cw, ch, ch / 2); x.fill(); x.restore();
+      x.drawImage(logoImg, l + pad + 11 * k, cy - lhh / 2, lw, lhh);
+    }
+    x.save(); x.fillStyle = "#fff"; x.textBaseline = "middle"; x.shadowColor = "rgba(0,0,0,.35)"; x.shadowBlur = 8 * k;
+    x.fillText(txt, l + lead, cy + 2 * k); x.restore();
   }
 
   // Nom (et prix) d'un article sur son image du carrousel
@@ -2162,7 +2225,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const mime = ["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm"]
       .find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
     if (!mime || !cv.captureStream){ pub("Ce navigateur ne sait pas créer de vidéo. Choisis Story ou Publication à la place.", true); return; }
-    if (photos[0] && !photos[0].mask && bgMode() !== "none"){
+    if (photos[0] && !photos[0].mask && needsCut()){
       $("makeVideo").disabled = true; $("makeVideo").textContent = "Préparation de la photo vivante…";
       try { await computeMask(photos[0]); } catch (e) {}
     }
