@@ -865,7 +865,14 @@ canvas{display:block; width:100%; height:auto}
   setTimeout(() => {
     const h = decodeURIComponent((location.hash || "").slice(1)).trim().toUpperCase();
     const linkCode = (/^[A-Z0-9][A-Z0-9-]{3,40}$/.test(h) && h !== "MENTIONS") ? h : "";
-    if (linkCode && (!store || store.code !== linkCode)){ $("sCode").value = linkCode; pullConfig(linkCode, false); }
+    if (linkCode && (!store || store.code !== linkCode)){
+      // Nouveau code sur ce téléphone : on repart d'une fiche vierge, jamais des réglages d'un autre magasin
+      store = {code: linkCode, tone: "chaleureux et proche, on tutoie", emoji: "quelques-uns", color: "#1B2A4A", kind: "occasion"};
+      fillSetup(store); applyProfile();
+      try { localStorage.setItem("arrivage-store", JSON.stringify(store)); } catch(e){}
+      $("setupForm").classList.remove("hidden"); $("setupSum").innerHTML = "";
+      pullConfig(linkCode, false);
+    }
     else if (store && store.code){
       pullConfig(store.code, true);
       if (!linkCode) try { history.replaceState(null, "", "#" + store.code); } catch(e){}
