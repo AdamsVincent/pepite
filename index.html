@@ -14,7 +14,7 @@
 <title>Pépite, posts prêts à publier · Adams Partners</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:ital,opsz,wght@1,9..144,600&family=Nunito:wght@700;800&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#F4F5F0; --surface:#FFFFFF; --ink:#1B2A4A; --muted:#5B6782; --line:#D6DAE2;
@@ -130,6 +130,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .ident{margin-top:16px; border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--field)}
 .ident summary{cursor:pointer; font-weight:700}
 .ident .chips{margin-top:6px}
+.accentRow{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+.accentRow input[type=color]{width:56px; height:44px; padding:2px; border:1.5px solid var(--line); border-radius:12px; background:var(--field)}
 .queue{border:2px solid var(--ink); border-radius:14px; padding:12px; margin:0 0 16px; background:var(--surface)}
 .qhead{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap}
 .qtip{font-size:13px; color:var(--muted); margin:8px 0 0}
@@ -248,6 +250,32 @@ canvas{display:block; width:100%; height:auto}
         <div class="chips" id="sPlus" role="group" aria-labelledby="sPlusL"></div>
         <label for="sSign">Signature de fin de post <span class="hint">(facultatif)</span></label>
         <input type="text" id="sSign" maxlength="80" placeholder="Ex. À très vite chez Lulu ! 💛">
+        <label for="sVoice">Notre façon d’écrire <span class="hint">(facultatif : collez 1 à 3 posts déjà publiés qui vous ressemblent, l’IA imitera votre style)</span></label>
+        <textarea id="sVoice" rows="4" maxlength="1500" placeholder="Ex. Coup de cœur du jour ❤️ Cette petite commode attendait sagement son nouveau foyer…"></textarea>
+        <label for="sExpr">Nos expressions maison <span class="hint">(facultatif)</span></label>
+        <input type="text" id="sExpr" maxlength="160" placeholder="Ex. les pépites du jour, on vous attend avec le café">
+        <label for="sRubr">Nos rendez-vous <span class="hint">(facultatif : vos rubriques récurrentes)</span></label>
+        <input type="text" id="sRubr" maxlength="160" placeholder="Ex. le coup de cœur du vendredi, la trouvaille du samedi">
+      </details>
+      <details class="ident" id="styleBox">
+        <summary>🎨 Notre style visuel <span class="hint">(pour un fil Instagram reconnaissable)</span></summary>
+        <label>Style des visuels</label>
+        <div class="chips" role="radiogroup" aria-label="Style des visuels">
+          <input type="radio" name="theme" id="th1" value="classique" checked><label for="th1">Classique</label>
+          <input type="radio" name="theme" id="th2" value="elegant"><label for="th2">Élégant</label>
+          <input type="radio" name="theme" id="th3" value="pop"><label for="th3">Pop</label>
+          <input type="radio" name="theme" id="th4" value="nature"><label for="th4">Nature</label>
+          <input type="radio" name="theme" id="th5" value="prestige"><label for="th5">Prestige</label>
+        </div>
+        <p class="hintline" id="themeHint"></p>
+        <label for="sAccent">Couleur de l’étiquette de prix</label>
+        <div class="accentRow"><input type="color" id="sAccent" value="#ffd23f"><button class="link" id="accentLogo" type="button">Prendre la couleur du logo</button><button class="link" id="accentReset" type="button">Couleur du style</button></div>
+        <p class="hintline" id="accentHint"></p>
+        <label>Texte sur l’image</label>
+        <div class="chips" role="radiogroup" aria-label="Texte sur l’image">
+          <input type="radio" name="clean" id="cl1" value="full" checked><label for="cl1">Titre et prix</label>
+          <input type="radio" name="clean" id="cl2" value="clean"><label for="cl2">Image épurée</label>
+        </div>
       </details>
       <label for="sHours">Horaires et adresse <span class="hint">(repris en fin de post)</span></label>
       <input type="text" id="sHours" placeholder="Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas">
@@ -634,6 +662,14 @@ canvas{display:block; width:100%; height:auto}
     }
   };
   const prof = () => PROFILES[(store && store.kind) || "occasion"] || PROFILES.occasion;
+  const THEMES = {
+    classique: {hint: "Le style d’origine : titres francs et étiquette en forme de flèche.", head: (px) => `800 ${px}px "Bricolage Grotesque", sans-serif`, tag: "arrow", accent: "#FFD23F", pill: "fill", rot: -0.12},
+    elegant: {hint: "Police à empattements en italique, étiquette arrondie et discrète : idéal pour une couturière, une boutique déco ou un créateur.", head: (px) => `italic 600 ${Math.round(px * 1.02)}px "Fraunces", Georgia, serif`, tag: "line", accent: "#FFFFFF", pill: "outline", rot: 0},
+    pop: {hint: "Titres en capitales et étiquette ronde aux couleurs vives : pour un snack, une friperie ou une boutique jeune.", head: (px) => `800 ${Math.round(px * 1.04)}px "Bricolage Grotesque", sans-serif`, up: true, tag: "round", accent: "#FF4D6D", pill: "accent", rot: -0.14},
+    nature: {hint: "Police arrondie et tons doux : pour une boulangerie, des produits locaux ou une boutique bien-être.", head: (px) => `800 ${px}px "Nunito", "Atkinson Hyperlegible", sans-serif`, tag: "soft", accent: "#F6EEDD", pill: "soft", rot: -0.05},
+    prestige: {hint: "Capitales fines, noir et or : pour le haut de gamme, le luxe ou le vintage de caractère.", head: (px) => `600 ${Math.round(px * 1.04)}px "Cormorant Garamond", Georgia, serif`, up: true, track: true, tag: "gold", accent: "#C9A227", pill: "gold", rot: 0}
+  };
+  const THEME_FONTS = {elegant: ['italic 600 96px "Fraunces"'], nature: ['800 96px "Nunito"'], prestige: ['600 96px "Cormorant Garamond"']};
   const PH = {"occasion": {"sName": "Ex. La Caverne d’Échirolles", "sCity": "Ex. Échirolles", "sHours": "Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas", "sTags": "#secondemain #echirolles", "nPrice": "Ex. 89 €", "prBase": "Ex. 79 €", "prUntil": "Ex. samedi soir", "vItem": "Ex. bergère en velours rouge", "vDelay": "Ex. moins de 24 h", "iDetail": "Ex. rachat cash sur rendez-vous, électroménager et multimédia en priorité", "prBaseH": "(facultatif pour une promo sur tout un rayon)", "vDelayL": "Parti en…"}, "neuf": {"sName": "Ex. Maison Lila", "sCity": "Ex. Périgueux", "sHours": "Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas", "sTags": "#boutique #commercelocal", "nPrice": "Ex. 39 €", "prBase": "Ex. 49 €", "prUntil": "Ex. dimanche soir", "vItem": "Ex. lampe de bureau en laiton", "vDelay": "Ex. 2 jours", "iDetail": "Ex. nouvelle collection arrivée, idées cadeaux pour la fête des mères", "prBaseH": "(facultatif pour une promo sur tout un rayon)", "vDelayL": "Épuisé en…"}, "bouche": {"sName": "Ex. Boulangerie du Marché", "sCity": "Ex. Sarlat", "sHours": "Ex. Du mardi au dimanche, 7 h – 19 h · 12 rue des Lilas", "sTags": "#boulangerie #patisserie", "nPrice": "Ex. 3,50 €", "prBase": "Ex. 12 €", "prUntil": "Ex. ce midi, ou jusqu’à samedi", "vItem": "Ex. tarte aux framboises", "vDelay": "Ex. avant midi", "iDetail": "Ex. fermeture exceptionnelle lundi, commandes de galettes ouvertes", "prBaseH": "(facultatif pour une offre sur toute une gamme)", "vDelayL": "Épuisé en…"}, "snack": {"sName": "Ex. Snack du Port", "sCity": "Ex. Arcachon", "sHours": "Ex. Tous les jours, 11 h 30 – 14 h 30 et 18 h 30 – 23 h", "sTags": "#streetfood #burger", "nPrice": "Ex. 11,90 €", "prBase": "Ex. 14,90 €", "prUntil": "Ex. ce soir, ou tout le week-end", "vItem": "Ex. burger double cheddar", "vDelay": "Ex. avant 13 h", "iDetail": "Ex. ouvert dimanche soir, livraison à partir de 19 h", "prBaseH": "(facultatif pour une offre sur toute la carte)", "vDelayL": "Épuisé en…"}, "createur": {"sName": "Ex. Atelier Fil d’Or", "sCity": "Ex. Paris 20e", "sHours": "Ex. Du mardi au samedi, 10 h 30 – 19 h · 15 rue des Lilas", "sTags": "#creation #artisanat", "nPrice": "Ex. 45 €", "prBase": "Ex. 60 €", "prUntil": "Ex. dimanche soir", "vItem": "Ex. sac cabas doublé", "vDelay": "Ex. 2 jours", "iDetail": "Ex. présente au marché des créateurs samedi, commandes de Noël ouvertes", "prBaseH": "(facultatif pour une offre sur toute une collection)", "vDelayL": "Partie en…"}};
   const SETUP_PH = ["sName", "sCity", "sHours", "sTags"];
   const IDENT = {"occasion": {"specs": ["Mobilier et déco", "Électroménager", "High-tech et multimédia", "Puériculture et jouets", "Brocante et vintage", "Livres, CD et vinyles", "Outillage et bricolage", "Sport et loisirs", "Vaisselle et art de la table"], "plus": ["Articles testés avant la vente", "Garantie sur l’électroménager", "Rachat cash", "Dépôt-vente", "Livraison possible", "Paiement en plusieurs fois", "Arrivages chaque jour"], "unique": "Ex. Dépôt-vente familial depuis 1998 : on teste tout avant la mise en rayon"}, "neuf": {"specs": ["Décoration", "Cadeaux", "Art de la table", "Bijoux et accessoires", "Papeterie", "Maison et linge", "Bien-être", "Produits locaux"], "plus": ["Emballage cadeau offert", "Click & collect", "Livraison possible", "Carte cadeau", "Commande sur demande", "Conseil personnalisé"], "unique": "Ex. Boutique de créateurs, chaque pièce est choisie à la main"}, "bouche": {"specs": ["Pains spéciaux", "Viennoiseries", "Pâtisseries", "Donuts", "Chocolats et confiseries", "Snacking et sandwichs", "Gâteaux personnalisés", "Glaces"], "plus": ["Commandes sur mesure", "Click & collect", "Livraison possible", "Ouvert le dimanche", "Formules petit-déjeuner", "Formules déjeuner"], "unique": "Ex. Boulangerie de quartier : pains au levain et viennoiseries pur beurre"}, "snack": {"specs": ["Burgers", "Tacos", "Pizzas", "Kebab", "Bowls et salades", "Wraps et sandwichs", "Desserts", "Boissons maison"], "plus": ["Sur place", "À emporter", "Livraison", "Click & collect", "Ouvert tard le soir", "Formules étudiantes", "Options végétariennes"], "unique": "Ex. Food truck familial : tout est préparé à la commande"}, "createur": {"specs": ["Couture et retouches", "Accessoires et sacs", "Bijoux", "Céramique et poterie", "Maroquinerie", "Décoration", "Bougies et cosmétiques", "Art et illustration"], "plus": ["Sur-mesure", "Pièces uniques", "Commande personnalisée", "Retouches", "Vente en ligne", "Présent sur les marchés", "Ateliers et cours"], "unique": "Ex. Couturière depuis 40 ans : créations faites main et sur-mesure"}};
@@ -707,10 +743,24 @@ canvas{display:block; width:100%; height:auto}
       const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
       c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
       setLogo(c.toDataURL("image/png"));
+      if ($("sAccent").dataset.set !== "1"){ const a = logoAccent(c, $("sColor").value); if (a){ $("sAccent").value = a; $("sAccent").dataset.set = "1"; $("accentHint").textContent = "Couleur de l’étiquette reprise du logo (modifiable)."; } }
     };
     im.src = URL.createObjectURL(f);
   });
   $("logoRemove").onclick = () => setLogo(null);
+  function showThemeHint(){
+    const t = THEMES[radioVal("theme")] || THEMES.classique;
+    $("themeHint").textContent = t.hint;
+    if ($("sAccent").dataset.set !== "1") $("sAccent").value = t.accent.toLowerCase();
+  }
+  document.querySelectorAll('input[name="theme"]').forEach(r => r.addEventListener("change", showThemeHint));
+  $("sAccent").addEventListener("input", () => { $("sAccent").dataset.set = "1"; $("accentHint").textContent = ""; });
+  $("accentReset").onclick = () => { $("sAccent").dataset.set = ""; showThemeHint(); $("accentHint").textContent = "L’étiquette reprend la couleur du style choisi."; };
+  $("accentLogo").onclick = () => {
+    const a = logoImg ? logoAccent(logoImg, $("sColor").value) : null;
+    if (a){ $("sAccent").value = a; $("sAccent").dataset.set = "1"; $("accentHint").textContent = "Couleur reprise du logo. Pensez à enregistrer."; }
+    else $("accentHint").textContent = logoImg ? "Aucune couleur assez marquée dans le logo : choisissez-la à la main." : "Ajoutez d’abord le logo du magasin.";
+  };
 
   function readSetup(){
     return {
@@ -727,6 +777,9 @@ canvas{display:block; width:100%; height:auto}
       specs: [...document.querySelectorAll('#sSpecs input:checked')].map(i => i.value),
       plus: [...document.querySelectorAll('#sPlus input:checked')].map(i => i.value),
       sign: $("sSign").value.trim(),
+      voice: $("sVoice").value.trim(), expr: $("sExpr").value.trim(), rubr: $("sRubr").value.trim(),
+      theme: radioVal("theme") || "classique", clean: radioVal("clean") || "full",
+      accent: $("sAccent").dataset.set === "1" ? $("sAccent").value : "",
       logo: logoData
     };
   }
@@ -742,6 +795,10 @@ canvas{display:block; width:100%; height:auto}
     setLogo(s.logo || null);
     $("sKind").value = s.kind || "occasion";
     $("sUnique").value = s.unique || ""; $("sSign").value = s.sign || "";
+    $("sVoice").value = s.voice || ""; $("sExpr").value = s.expr || ""; $("sRubr").value = s.rubr || "";
+    setRadio("theme", s.theme || "classique"); setRadio("clean", s.clean || "full");
+    if (s.accent){ $("sAccent").value = s.accent.toLowerCase(); $("sAccent").dataset.set = "1"; } else { $("sAccent").dataset.set = ""; $("sAccent").value = (THEMES[s.theme] || THEMES.classique).accent.toLowerCase(); }
+    showThemeHint();
     renderIdent(s.kind || "occasion", s.specs || [], s.plus || []);
     if (s.color && /^#[0-9a-f]{6}$/i.test(s.color)) { $("sColor").value = s.color.toLowerCase(); $("sColorHex").value = s.color.toUpperCase(); }
   }
@@ -976,7 +1033,19 @@ canvas{display:block; width:100%; height:auto}
       out.push("Identité du commerce : " + [s.unique, (s.specs || []).join(", "), (s.plus || []).join(", ")].filter(Boolean).join(" | ") + ". Ne cite que ces services, n’en invente aucun.");
       out.push("Élément d’identité à glisser naturellement dans CE post (un seul, sans forcer) : " + pick + ".");
     }
-    out.push("Angle du texte pour ce post : " + ANGLES[Math.floor(Math.random() * ANGLES.length)] + ".");
+    let ai = Math.floor(Math.random() * ANGLES.length);
+    try { const last = +localStorage.getItem("pepite-angle"); if (ai === last) ai = (ai + 1 + Math.floor(Math.random() * (ANGLES.length - 1))) % ANGLES.length; localStorage.setItem("pepite-angle", String(ai)); } catch(e){}
+    out.push("Angle du texte pour ce post : " + ANGLES[ai] + ".");
+    if (s.voice) out.push("Exemples de posts déjà publiés par le commerce. Imite leur style (longueur des phrases, vocabulaire, ponctuation, façon d’utiliser les émojis, humour ou sobriété), sans jamais recopier leur contenu, leurs produits ni leurs prix. La règle tu/vous donnée plus bas reste prioritaire :\n«« " + s.voice.slice(0, 1500) + " »»");
+    if (s.expr && Math.random() < 0.5) out.push("Expressions maison du commerce : « " + s.expr + " ». Glisses-en une seule, naturellement et telle quelle, dans ce post.");
+    if (s.rubr){
+      const jour = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});
+      out.push("Rendez-vous récurrents du commerce : " + s.rubr + ". Nous sommes le " + jour + " : si l’un d’eux correspond au jour ou à ce post, utilise-le comme accroche ; sinon n’en parle pas.");
+    }
+    try {
+      const recent = [...loadHist().map(h => h.caption), ...loadQueue().map(q => q.caption)].filter(Boolean).map(c => String(c).split("\n")[0].trim().slice(0, 90)).filter((l, i, arr) => l && arr.indexOf(l) === i).slice(0, 6);
+      if (recent.length) out.push("Premières lignes des derniers posts du commerce. Ne commence PAS de la même façon : varie la construction, le premier mot et le vocabulaire :\n" + recent.map(l => "- " + l).join("\n"));
+    } catch(e){}
     if (s.sign) out.push("Termine le texte (juste avant les horaires) par cette signature exacte : « " + s.sign + " ».");
     return out.join("\n") + "\n";
   }
@@ -1954,12 +2023,78 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       for (let i=0;i<14;i++){ x.beginPath(); x.arc(W*0.85, H*0.15, 90+i*90 + (t<DUR ? t*8 : 0), 0, Math.PI*2); x.lineWidth = 2; x.strokeStyle = "rgba(255,255,255,.08)"; x.stroke(); }
     }
   }
+  // ---------- Styles visuels propres à chaque magasin ----------
+  const theme = () => THEMES[(current && current.s && current.s.theme) || (store && store.theme) || "classique"] || THEMES.classique;
+  const accent = () => ((current && current.s && current.s.accent) || (store && store.accent)) || theme().accent;
+  const inkOn = (bg) => isLight(bg) ? "#1B2A4A" : "#FFFFFF";
+  const brandDeep = () => { const b = (current && current.s && current.s.color) || (store && store.color) || "#1B2A4A"; return isLight(b) ? shade(b, -0.45) : b; };
+  const setTrack = (x, on) => { try { x.letterSpacing = on ? "3px" : "0px"; } catch(e){} };
+  let _mctx = null;
+  const measureCtx = () => _mctx || (_mctx = Object.assign(document.createElement("canvas"), {width: 8, height: 8}).getContext("2d"));
+  // Étiquette de prix, dessinée au point d'origine (déjà translaté et tourné)
+  function drawPrice(x, text, big){
+    const T = theme(), acc = accent(), s = big === false ? 0.92 : 1;
+    x.textAlign = "center"; x.textBaseline = "middle";
+    if (T.tag === "round"){
+      x.font = `800 ${Math.round(68 * s)}px "Bricolage Grotesque", sans-serif`;
+      const r = Math.max(104 * s, x.measureText(text).width / 2 + 42 * s);
+      x.fillStyle = acc; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fill();
+      x.lineWidth = 5; x.strokeStyle = "rgba(255,255,255,.9)"; x.beginPath(); x.arc(0, 0, r - 14 * s, 0, Math.PI * 2); x.stroke();
+      x.fillStyle = inkOn(acc); x.fillText(text, 0, 5);
+      return {tw: 2 * r, th: 2 * r};
+    }
+    if (T.tag === "line" || T.tag === "soft" || T.tag === "gold"){
+      x.font = T.tag === "line" ? `italic 600 ${Math.round(72 * s)}px "Fraunces", Georgia, serif` : T.tag === "soft" ? `800 ${Math.round(70 * s)}px "Nunito", sans-serif` : `600 ${Math.round(76 * s)}px "Cormorant Garamond", Georgia, serif`;
+      const tw = x.measureText(text).width + 96 * s, h = 120 * s, rad = T.tag === "line" ? h / 2 : T.tag === "soft" ? 38 * s : 6;
+      x.fillStyle = T.tag === "gold" ? "#0E0E0E" : acc; roundRect(x, -tw / 2, -h / 2, tw, h, rad); x.fill();
+      if (T.tag === "gold"){ x.lineWidth = 3; x.strokeStyle = acc; roundRect(x, -tw / 2 + 9, -h / 2 + 9, tw - 18, h - 18, 3); x.stroke(); }
+      x.fillStyle = T.tag === "gold" ? acc : isLight(acc) ? brandDeep() : "#FFFFFF";
+      x.fillText(text, 0, T.tag === "line" ? 2 : 5);
+      return {tw, th: h};
+    }
+    x.font = `800 ${Math.round(76 * s)}px "Bricolage Grotesque", sans-serif`;
+    const tw = Math.max(200 * s, x.measureText(text).width + 110 * s), th = 130 * s;
+    x.fillStyle = acc;
+    x.beginPath(); x.moveTo(-tw/2+40*s,-th/2); x.lineTo(tw/2,-th/2); x.lineTo(tw/2,th/2); x.lineTo(-tw/2+40*s,th/2); x.lineTo(-tw/2,0); x.closePath(); x.fill();
+    x.fillStyle = inkOn(acc); x.beginPath(); x.arc(-tw/2+34*s,0,12*s,0,Math.PI*2); x.fill();
+    x.fillText(text, 18 * s, 6);
+    return {tw, th};
+  }
+  // Couleur marquante du logo, différente de la couleur principale du magasin
+  function logoAccent(img, brand){
+    try {
+      const c = document.createElement("canvas"); c.width = c.height = 48; const g = c.getContext("2d"); g.drawImage(img, 0, 0, 48, 48);
+      const d = g.getImageData(0, 0, 48, 48).data, bins = Array.from({length: 12}, () => ({w: 0, r: 0, g: 0, b: 0}));
+      for (let i = 0; i < d.length; i += 4){
+        if (d[i + 3] < 128) continue;
+        const r = d[i], gg = d[i + 1], b = d[i + 2], mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), l = (mx + mn) / 510;
+        const sat = mx === mn ? 0 : (mx - mn) / (255 - Math.abs(mx + mn - 255));
+        if (sat < 0.35 || l < 0.22 || l > 0.9) continue;
+        let h = mx === r ? ((gg - b) / (mx - mn)) % 6 : mx === gg ? (b - r) / (mx - mn) + 2 : (r - gg) / (mx - mn) + 4;
+        h = (h * 60 + 360) % 360; const k = Math.floor(h / 30) % 12;
+        const wgt = sat * Math.min(1, l / 0.45);   // une étiquette doit être vive et lumineuse : on favorise ces couleurs
+        bins[k].w += wgt; bins[k].r += r * wgt; bins[k].g += gg * wgt; bins[k].b += b * wgt;
+      }
+      const hex = (v) => Math.round(v).toString(16).padStart(2, "0");
+      const br = brand && /^#[0-9a-f]{6}$/i.test(brand) ? [1, 3, 5].map(i => parseInt(brand.slice(i, i + 2), 16)) : null;
+      const cand = bins.filter(b => b.w > 1.5).sort((a, b) => b.w - a.w).map(b => [b.r / b.w, b.g / b.w, b.b / b.w]);
+      const far = cand.find(c => !br || Math.hypot(c[0] - br[0], c[1] - br[1], c[2] - br[2]) > 90) || null;
+      return far ? "#" + far.map(hex).join("") : null;
+    } catch(e){ return null; }
+  }
   function drawPill(x, l, y, text, color){
-    x.font = '700 40px "Atkinson Hyperlegible", sans-serif';
-    const w = x.measureText(text).width + 60;
-    x.fillStyle = color; roundRect(x, l, y, w, 74, 37); x.fill();
-    x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(text, l + 30, y + 38);
-    x.textBaseline = "alphabetic";
+    const st = theme().pill;
+    let font = '700 40px "Atkinson Hyperlegible", sans-serif', t = text, bg = color, fg = "#fff", stroke = null;
+    if (st === "outline"){ font = 'italic 600 40px "Fraunces", Georgia, serif'; bg = "rgba(0,0,0,.22)"; stroke = "rgba(255,255,255,.85)"; }
+    if (st === "accent"){ font = '800 38px "Bricolage Grotesque", sans-serif'; t = text.toUpperCase(); bg = accent(); fg = inkOn(bg); }
+    if (st === "soft"){ font = '800 40px "Nunito", sans-serif'; bg = "#F6EEDD"; fg = brandDeep(); }
+    if (st === "gold"){ font = '600 38px "Cormorant Garamond", Georgia, serif'; t = text.toUpperCase(); bg = "rgba(10,10,10,.82)"; fg = accent(); stroke = accent(); }
+    x.font = font; setTrack(x, st === "gold");
+    const w = x.measureText(t).width + 60;
+    x.fillStyle = bg; roundRect(x, l, y, w, 74, 37); x.fill();
+    if (stroke){ x.lineWidth = 2.5; x.strokeStyle = stroke; roundRect(x, l + 1.5, y + 1.5, w - 3, 71, 35.5); x.stroke(); }
+    x.fillStyle = fg; x.textBaseline = "middle"; x.fillText(t, l + 30, y + 38);
+    x.textBaseline = "alphabetic"; setTrack(x, false);
     return w;
   }
   // Signature du magasin : badge en verre dépoli (logo + nom), posé sur le visuel
@@ -1997,21 +2132,17 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const {p, r} = current, W = F.w, H = F.h, tall = H > 1500;
     const it = (p.items || [])[n] || {}, name = it.name || ((r && r.articles) || [])[n] || "", price = it.price ? normPrice(it.price) : "";
     if (!name && !price) return;
-    const font = '800 80px "Bricolage Grotesque", sans-serif';
-    const lines = name ? wrap(x, name.charAt(0).toUpperCase() + name.slice(1), W - F.side - F.right - (!tall && price ? 320 : 0), font).slice(0, 2) : [];
+    if (current.s && current.s.clean === "clean") return;
+    const font = theme().head(80), nm = theme().up ? name.toUpperCase() : name.charAt(0).toUpperCase() + name.slice(1);
+    const lines = name ? wrap(x, nm, W - F.side - F.right - (!tall && price ? 320 : 0), font).slice(0, 2) : [];
     const lastY = H - F.bottom - 100, firstY = lastY - Math.max(0, lines.length - 1) * 86;
     x.save(); x.font = font; x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.45)"; x.shadowBlur = 18;
     lines.forEach((l, i) => x.fillText(l, F.side, firstY + i * 86)); x.restore();
     if (price){
       x.save();
-      x.translate(W - F.right - 165, tall ? firstY - 170 : H - F.bottom - 190); x.rotate(-0.12);
-      x.font = '800 70px "Bricolage Grotesque", sans-serif';
-      const tw = Math.max(190, x.measureText(price).width + 104), th = 120;
-      x.fillStyle = "#FFD23F";
-      x.beginPath(); x.moveTo(-tw/2+38,-th/2); x.lineTo(tw/2,-th/2); x.lineTo(tw/2,th/2); x.lineTo(-tw/2+38,th/2); x.lineTo(-tw/2,0); x.closePath(); x.fill();
-      x.fillStyle = "#1B2A4A"; x.beginPath(); x.arc(-tw/2+32,0,11,0,Math.PI*2); x.fill();
-      x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(price, 18, 6);
-      x.restore();
+      x.translate(W - F.right - 165, tall ? firstY - 170 : H - F.bottom - 190); x.rotate(theme().rot);
+      drawPrice(x, price, false);
+      x.restore(); x.textAlign = "left"; x.textBaseline = "alphabetic";
     }
   }
 
@@ -2040,8 +2171,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const bodyLines = wrap(x, s.hours, W - F.side - F.right, '700 50px "Atkinson Hyperlegible", sans-serif').slice(0, 6);
       const bodyH = bodyLines.length * 66;
       let y = H - F.bottom - 140 - bodyH;
-      x.fillStyle = ink; x.font = '800 104px "Bricolage Grotesque", sans-serif';
-      x.fillText(head, F.side, y - 40);
+      x.fillStyle = ink; x.font = theme().head(104); setTrack(x, theme().track);
+      x.fillText(theme().up ? head.toUpperCase() : head, F.side, y - 40); setTrack(x, false);
       x.font = '700 50px "Atkinson Hyperlegible", sans-serif'; x.globalAlpha = .92;
       bodyLines.forEach((l, i) => x.fillText(l, F.side, y + 40 + i * 66));
       x.globalAlpha = 1;
@@ -2051,8 +2182,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
     // Couverture
     drawBg(x, F, slide.ph, brand, t);
+    const clean = s.clean === "clean";
     x.globalAlpha = ease((t - 0.2) / 0.4);
-    drawPill(x, F.side, F.top, label, tcolor);
+    if (!clean) drawPill(x, F.side, F.top, label, tcolor);
     if (total > 1){
       x.font = '700 34px "Atkinson Hyperlegible", sans-serif';
       const txt = "1 / " + total + "  →", w = x.measureText(txt).width + 44;
@@ -2060,17 +2192,23 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(txt, W - F.right - w + 22, F.top + 38); x.textBaseline = "alphabetic";
     }
 
-    const tagText = p.type === "nouveaute" ? (p.multi ? (p.range && p.range.replace(/^de\s+/i, "").length <= 14 ? p.range.replace(/^de\s+/i, "") : "") : p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.tag || "") : "";
-    const headFont = '800 96px "Bricolage Grotesque", sans-serif';
+    const tagText = clean ? "" : p.type === "nouveaute" ? (p.multi ? (p.range && p.range.replace(/^de\s+/i, "").length <= 14 ? p.range.replace(/^de\s+/i, "") : "") : p.price ? normPrice(p.price) : "") : p.type === "promo" ? (p.tag || "") : "";
     let tagRoom = 0;
-    if (!tall && tagText){ x.font = '800 76px "Bricolage Grotesque", sans-serif'; tagRoom = Math.max(320, 165 + Math.max(200, x.measureText(tagText).width + 110) / 2 + 30); }
+    if (!tall && tagText){ const m = measureCtx(); m.save(); const {tw} = drawPrice(m, tagText); m.restore(); tagRoom = Math.max(320, 165 + tw / 2 + 40); }
     const maxW = W - F.side - F.right - tagRoom;
-    const lines = wrap(x, r.accroche || r.article || label, maxW, headFont).slice(0, 3);
+    const ttl = r.accroche || r.article || label, ttlText = theme().up ? ttl.toUpperCase() : ttl;
+    setTrack(x, theme().track);
+    // le titre se réduit tout seul pour tenir sur 2 lignes (3 au maximum)
+    let hs = 96, headFont = theme().head(hs), lines = [];
+    if (!clean) for (;;){ headFont = theme().head(hs); lines = wrap(x, ttlText, maxW, headFont); x.font = headFont; const tooWide = lines.some(l => x.measureText(l).width > maxW); if ((lines.length <= 2 && !tooWide) || hs <= 56) break; hs -= 6; }
+    lines = lines.slice(0, 3);
+    const lh = Math.round(hs * 1.04);
     const a = ease((t - 0.6) / 0.5), dy = (1 - a) * 60;
     x.globalAlpha = a; x.fillStyle = (!slide.ph && isLight(brand)) ? "#1B2A4A" : "#fff"; x.font = headFont;
     const lastY = H - F.bottom - 100;
-    const firstY = lastY - (lines.length - 1) * 100;
-    lines.forEach((l, i) => x.fillText(l, F.side, firstY + i * 100 + dy));
+    const firstY = lastY - (lines.length - 1) * lh;
+    lines.forEach((l, i) => x.fillText(l, F.side, firstY + i * lh + dy));
+    setTrack(x, false);
 
     x.globalAlpha = ease((t - 0.9) / 0.5);
     drawBand(x, F, s, brand, !!slide.ph);
@@ -2097,14 +2235,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
         x.globalAlpha = 1; x.save();
         const cx = W - F.right - 165;
         const cy = tall ? firstY - 190 : H - F.bottom - 200;
-        x.translate(cx, cy); x.rotate(-0.12); x.scale(scale, scale);
-        x.font = '800 76px "Bricolage Grotesque", sans-serif';
-        const tw = Math.max(200, x.measureText(tagText).width + 110), th = 130;
-        x.fillStyle = "#FFD23F";
-        x.beginPath(); x.moveTo(-tw/2+40,-th/2); x.lineTo(tw/2,-th/2); x.lineTo(tw/2,th/2); x.lineTo(-tw/2+40,th/2); x.lineTo(-tw/2,0); x.closePath(); x.fill();
-        x.fillStyle = "#1B2A4A"; x.beginPath(); x.arc(-tw/2+34,0,12,0,Math.PI*2); x.fill();
-        x.textAlign = "center"; x.textBaseline = "middle";
-        x.fillText(tagText, 18, 6);
+        x.translate(cx, cy); x.rotate(theme().rot); x.scale(scale, scale);
+        const {tw, th} = drawPrice(x, tagText);
         if (p.type === "promo" && p.oldTag){
           x.font = '700 46px "Atkinson Hyperlegible", sans-serif';
           x.fillStyle = "#fff"; x.shadowColor = "rgba(0,0,0,.55)"; x.shadowBlur = 12;
@@ -2217,7 +2349,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const sel = nets();
     view.net = sel.find(n => n !== "tt") || sel[0] || "ig";
     done = {}; tried = {}; videoFile = null; cache = {}; pub("");
-    try { await Promise.all([document.fonts.load('800 96px "Bricolage Grotesque"'), document.fonts.load('700 40px "Atkinson Hyperlegible"')]); } catch(e){}
+    try { await Promise.all([document.fonts.load('800 96px "Bricolage Grotesque"'), document.fonts.load('700 40px "Atkinson Hyperlegible"'), ...(THEME_FONTS[(store && store.theme) || "classique"] || []).map(f => document.fonts.load(f))]); } catch(e){}
     const k = kind();
     let hint = KIND_HINT[k];
     $("kindHint").textContent = hint;
