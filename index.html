@@ -199,6 +199,7 @@ canvas{display:block; width:100%; height:auto}
   #preview.on{animation:pop .35s ease-out}
   @keyframes pop{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
 }
+.pubtip{margin:0 0 10px;font-size:14px;color:var(--muted);line-height:1.4}
 </style>
 </head>
 <body>
@@ -292,6 +293,7 @@ canvas{display:block; width:100%; height:auto}
         <input type="radio" name="tone" id="t1" value="chaleureux et proche" checked><label for="t1">Chaleureux</label>
         <input type="radio" name="tone" id="t2" value="dynamique et enthousiaste"><label for="t2">Dynamique</label>
         <input type="radio" name="tone" id="t3" value="sobre et professionnel"><label for="t3">Sobre</label>
+        <input type="radio" name="tone" id="t4" value="factuel"><label for="t4">Factuel</label>
       </div>
       <label>Émojis</label>
       <div class="chips" role="radiogroup" aria-label="Émojis">
@@ -467,6 +469,7 @@ canvas{display:block; width:100%; height:auto}
       <input type="radio" name="ptone" id="pt1" value="chaleureux et proche"><label for="pt1">Chaleureux</label>
       <input type="radio" name="ptone" id="pt2" value="dynamique et enthousiaste"><label for="pt2">Dynamique</label>
       <input type="radio" name="ptone" id="pt3" value="sobre et professionnel"><label for="pt3">Sobre</label>
+      <input type="radio" name="ptone" id="pt4" value="factuel"><label for="pt4">Factuel</label>
     </div>
     <label>On s’adresse aux clients en…</label>
     <div class="chips" role="radiogroup" aria-label="Tu ou vous pour ce post">
@@ -1029,7 +1032,9 @@ canvas{display:block; width:100%; height:auto}
   }
 
   const ANGLES = ["une petite mise en situation (imagine le produit chez le client)", "un conseil pratique ou une idée d’utilisation", "une touche d’humour légère", "une question directe dès la première ligne", "l’émotion et l’envie", "le bon plan et l’urgence douce"];
-  function identLines(s){
+  const isFact = (p, s) => /factuel/.test((p && p.tone) || (s && s.tone) || "");
+  function identLines(s, fact){
+    if (fact) return (s.sign ? "Termine le texte (juste avant les horaires) par cette signature exacte : « " + s.sign + " ».\n" : "");
     const items = [];
     if (s.unique) items.push("ce qui rend le commerce unique : " + s.unique);
     (s.specs || []).forEach(x => items.push("sa spécialité : " + x));
@@ -1043,7 +1048,7 @@ canvas{display:block; width:100%; height:auto}
     let ai = Math.floor(Math.random() * ANGLES.length);
     try { const last = +localStorage.getItem("pepite-angle"); if (ai === last) ai = (ai + 1 + Math.floor(Math.random() * (ANGLES.length - 1))) % ANGLES.length; localStorage.setItem("pepite-angle", String(ai)); } catch(e){}
     out.push("Angle du texte pour ce post : " + ANGLES[ai] + ".");
-    if (s.voice) out.push("Exemples de posts déjà publiés par le commerce. Imite leur style (longueur des phrases, vocabulaire, ponctuation, façon d’utiliser les émojis, humour ou sobriété), sans jamais recopier leur contenu, leurs produits ni leurs prix. La règle tu/vous donnée plus bas reste prioritaire :\n«« " + s.voice.slice(0, 1500) + " »»");
+    if (s.voice) out.push("Exemples de posts déjà publiés par le commerce. Imite leur style (longueur des phrases, vocabulaire, ponctuation, façon d’utiliser les émojis, humour ou sobriété), sans jamais recopier leur contenu, leurs produits ni leurs prix. La règle tu/vous donnée plus bas reste prioritaire :\n«« " + s.voice.slice(0, 800) + " »»");
     if (s.expr && Math.random() < 0.5) out.push("Expressions maison du commerce : « " + s.expr + " ». Glisses-en une seule, naturellement et telle quelle, dans ce post.");
     if (s.rubr){
       const jour = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});
@@ -1071,6 +1076,7 @@ canvas{display:block; width:100%; height:auto}
     return r;
   }
   function buildPrompt(s, p, strict){
+    const fact = isFact(p, s);
     const typeDesc = {
       nouveaute: `Post « ${TYPE_LABEL.nouveaute} » : ${prof().newDesc}. Produit saisi par le commerçant : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer)"}.${prof().state ? " État : " + p.state + "." : ""} Précision : ${p.note || "aucune"}.`,
       promo: `Post « promo ». Ce qui est en promo : ${p.what || "(non précisé)"}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. Jusqu’au : ${p.until || "(non précisé)"}. Utilise exactement ces montants, n’en calcule pas d’autres.`,
@@ -1084,10 +1090,10 @@ ${p.range ? "Fourchette de prix à citer telle quelle : " + p.range + "." : "Pas
     return `Tu écris des publications Facebook/Instagram pour ${prof().intro}.
 
 Magasin : ${s.name}${s.city ? ", " + s.city : ""}.
-Ton : ${p.tone || s.tone}. Émojis : ${s.emoji}.
+Ton : ${fact ? "factuel et informatif, " + (isVous(p, s) ? "on vouvoie" : "on tutoie") : (p.tone || s.tone)}. Émojis : ${s.emoji === "aucun" ? "aucun" : fact ? "un ou deux au plus" : s.emoji}.
 Horaires et adresse à rappeler en fin de post : ${s.hours || "(non fournis, n’en invente pas)"}.
 Hashtags fixes du magasin : ${s.tags || "(aucun)"}.
-${identLines(s)}
+${identLines(s, fact)}
 ${multiDesc || typeDesc}
 ${p.multi ? p.items.length + " photos sont jointes, une par article, dans le même ordre que la liste." : photoBlob ? "Une photo est jointe : c’est la photo prise par le magasin." : "Pas de photo jointe."}
 
@@ -1097,8 +1103,8 @@ ${toneRule(p, s, strict)}
 - Si tu identifies l’article sur la photo, nomme-le précisément (type, et marque/modèle seulement si visible). Si tu n’es pas sûr, reste générique et mets la confiance à « faible ».
 ${prof().rules.join("\n")}
 - Dans les deux premières lignes, cite naturellement le type d’article et la ville du magasin (${s.city || "la ville"}) : ce sont les mots que les clients tapent dans la recherche Instagram.
-- Termine le texte, juste avant les horaires, par une question courte et simple qui donne envie de répondre en commentaire, en plus de l’invitation à passer en magasin.
-${p.multi ? "- Structure : une accroche d’ensemble en première ligne (par exemple un arrivage), puis UNE ligne courte par article, dans l’ordre des photos, qui commence par " + (s.emoji === "aucun" ? "un tiret" : "un émoji adapté à l’article") + " et donne son nom simple (avec son prix seulement s’il est fourni), sans entrer dans les détails ; puis la question et l’appel à l’action (" + prof().cta + ")." : "- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (" + prof().cta + ")."}
+${fact ? "- STYLE FACTUEL : parle uniquement du produit et du magasin. Dis ce qu’est l’article, ce qu’on voit sur la photo (couleur, matière, détails visibles), son état s’il est donné et son prix. Aucune mise en situation, aucune ambiance, aucune image du type « au coin du feu », aucun humour, aucune métaphore, aucune question aux clients.\n- Termine par une phrase simple qui invite à passer en magasin ou à réserver par message." : "- Termine le texte, juste avant les horaires, par une question courte et simple qui donne envie de répondre en commentaire, en plus de l’invitation à passer en magasin."}
+${p.multi ? "- Structure : une accroche d’ensemble en première ligne (par exemple un arrivage), puis UNE ligne courte par article, dans l’ordre des photos, qui commence par " + (s.emoji === "aucun" ? "un tiret" : "un émoji adapté à l’article") + " et donne son nom simple (avec son prix seulement s’il est fourni), sans entrer dans les détails ; puis la question et l’appel à l’action (" + prof().cta + ")." : (fact ? "- 3 à 5 lignes courtes : le nom de l’article et la ville en première ligne, puis sa description, puis le prix et l’invitation à passer." : "- 4 à 8 lignes courtes, une accroche forte en première ligne, un appel à l’action (" + prof().cta + ").")}
 - Termine par les horaires/adresse s’ils sont fournis.
 - Aère le texte pour qu’il se lise bien sur téléphone : laisse une ligne vide (\\n\\n) entre l’accroche, le corps du texte, la question finale, la signature et les horaires. Les lignes d’une même liste restent collées entre elles.
 - Propose au maximum 5 hashtags pertinents au total, en comptant les hashtags fixes du magasin.
@@ -1106,7 +1112,7 @@ ${p.multi ? "- Structure : une accroche d’ensemble en première ligne (par exe
 - Écris toujours les prix avec le symbole €, par exemple « 59 € ».
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"annonce_titre":"${prof().annonce && !p.multi && (p.type === "nouveaute" || p.type === "promo") ? "titre d’annonce Leboncoin/Marketplace, factuel, 60 caractères maximum : type d’article, matière ou couleur, marque seulement si visible, sans émoji" : ""}","annonce_texte":"${prof().annonce && !p.multi && (p.type === "nouveaute" || p.type === "promo") ? "description d’annonce Leboncoin/Marketplace, factuelle, 3 à 6 lignes : ce que c’est, état tel que saisi, prix, à retirer en magasin chez " + s.name + (s.city ? " à " + s.city : "") + (s.hours ? ", horaires : " + s.hours : "") + " ; sans émoji, sans hashtag, sans superlatif" : ""}"}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"]}`;
   }
 
   // ---------- Mode démo sans IA ----------
@@ -2322,8 +2328,11 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
   function renderPubList(){
     const box = $("pubList"); box.innerHTML = "";
+    const tip = document.createElement("p"); tip.className = "pubtip";
+    tip.textContent = "Le texte est copié automatiquement. Dans l’appli, appuie longuement dans la légende, puis « Coller ».";
     const sel = nets();
     if (!sel.length){ const m = document.createElement("p"); m.className = "status err"; m.textContent = "Choisis au moins un réseau."; box.append(m); return; }
+    box.append(tip);
     let nextSet = false;
     sel.forEach((n, i) => {
       const isDone = !!done[n];
@@ -2431,15 +2440,30 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (!rest.length && current.queueId) finishQueued();
     if (!rest.length) confetti();
     const next = rest.length ? ` Au tour de ${NETS[rest[0]]} : bouton suivant.` : " Tout est publié, bravo !";
-    pub((downloaded ? `Fichiers téléchargés et texte copié : ajoute-les dans ${NETS[net]}.` : `${NETS[net]} : c’est envoyé, colle le texte en légende s’il n’y est pas.`) + next);
+    pub((downloaded ? `Fichiers téléchargés et texte copié : ajoute-les dans ${NETS[net]}.` : `${NETS[net]} : c’est envoyé. Le texte est copié : appuie longuement dans la légende, puis « Coller ».`) + next);
     const btn = $("pubList").querySelector(".pubrow:not(.done)");
     if (btn) btn.focus({preventScroll:true});
   }
   let tried = {};
+  // Copie le texte tout de suite, pendant le geste de l'utilisateur, avant d'ouvrir le partage
+  function copyNow(text){
+    let ok = false;
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;pointer-events:none";
+      document.body.append(ta);
+      ta.select(); ta.setSelectionRange(0, text.length);
+      ok = document.execCommand("copy");
+      ta.remove(); try { window.getSelection().removeAllRanges(); } catch(e){}
+    } catch(e){}
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    return ok;
+  }
   async function shareTo(net){
     const files = filesFor(net); if (!files) return;
     const text = $("caption").value;
-    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    copyNow(text);
     tried[net] = true;
     if (navigator.canShare && navigator.canShare({files})){
       // Instagram ouvre sa propre appli : l'iPhone répond alors « annulé » alors que le post est publié.
@@ -2454,8 +2478,10 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   }
 
   $("copy").onclick = async () => {
-    try { await navigator.clipboard.writeText($("caption").value); $("copy").textContent = "Texte copié"; }
-    catch (e) { $("caption").select(); $("copy").textContent = "Sélectionné, copie-le"; }
+    let ok = copyNow($("caption").value);
+    if (!ok) try { await navigator.clipboard.writeText($("caption").value); ok = true; } catch(e){}
+    if (ok) $("copy").textContent = "Texte copié";
+    else { $("caption").select(); $("copy").textContent = "Sélectionné, copie-le"; }
     setTimeout(() => $("copy").textContent = "Copier le texte", 2000);
   };
   $("dl").onclick = async () => { const f = filesFor(view.net); if (f) await saveFiles(f); };
