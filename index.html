@@ -200,6 +200,12 @@ canvas{display:block; width:100%; height:auto}
   @keyframes pop{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
 }
 .pubtip{margin:0 0 10px;font-size:14px;color:var(--muted);line-height:1.4}
+.bufbox{margin:18px 0 6px;padding:14px;border:1.5px dashed var(--line);border-radius:16px}
+.bufbox h3{margin:0 0 6px;font-size:17px}
+.bufchan{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:600}
+.bufchan input{width:22px;height:22px}
+.btn.direct{width:100%;margin-bottom:10px}
+.pubor{margin:4px 0 8px;font-size:14px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -321,6 +327,21 @@ canvas{display:block; width:100%; height:auto}
         <input type="file" id="sLogo" accept="image/png,image/jpeg,image/webp">
       </div>
       <button class="link hidden" id="logoRemove" type="button">Retirer le logo</button>
+      <div class="bufbox" id="bufBox">
+        <h3>🚀 Publier en un geste avec Buffer</h3>
+        <p class="hintline" id="bufState">Pas encore relié. Avec Buffer (gratuit jusqu’à 3 réseaux), Pépite publie directement sur Instagram, Facebook et TikTok, texte compris.</p>
+        <div id="bufConnect">
+          <label for="bufKey">Clé Buffer</label>
+          <input type="password" id="bufKey" autocomplete="off" spellcheck="false" placeholder="Colle ici la clé Buffer du magasin">
+          <button class="btn ghost" id="bufGo" type="button">Relier Buffer</button>
+          <p class="note">La clé se crée sur publish.buffer.com › Settings › API › New Key. Elle est gardée en sécurité par Pépite et sert à tous les téléphones du magasin.</p>
+        </div>
+        <div id="bufLinked" class="hidden">
+          <div id="bufChans"></div>
+          <button class="btn ghost" id="bufOff" type="button">Délier Buffer</button>
+        </div>
+        <p class="hintline" id="bufMsg" role="status" aria-live="polite"></p>
+      </div>
       <button class="btn big" id="saveSetup" type="button">Enregistrer le magasin</button>
       <p class="hintline" id="setupMsg"></p>
     </div>
@@ -2332,6 +2353,15 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     tip.textContent = "Le texte est copié automatiquement. Dans l’appli, appuie longuement dans la légende, puis « Coller ».";
     const sel = nets();
     if (!sel.length){ const m = document.createElement("p"); m.className = "status err"; m.textContent = "Choisis au moins un réseau."; box.append(m); return; }
+    if (bufOn() && kind() !== "video"){
+      const names = buf.channels.filter(c => buf.selected.includes(c.id)).map(c => SVC[c.service]);
+      const allDone = names.length && buf.channels.filter(c => buf.selected.includes(c.id)).every(c => done[SVC_NET[c.service]]);
+      const d = document.createElement("button"); d.type = "button"; d.className = "btn big direct";
+      d.textContent = allDone ? "✓ Publié sur " + names.join(" + ") : "🚀 Publier maintenant sur " + names.join(" + ");
+      d.disabled = !!allDone || bufBusy; d.onclick = () => publishDirect(d);
+      const or = document.createElement("p"); or.className = "pubor"; or.textContent = "ou publier à la main, réseau par réseau :";
+      box.append(d, or);
+    }
     box.append(tip);
     let nextSet = false;
     sel.forEach((n, i) => {
@@ -2445,6 +2475,67 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (btn) btn.focus({preventScroll:true});
   }
   let tried = {};
+  // ---------- Publication directe via Buffer ----------
+  const SVC = {instagram:"Instagram", facebook:"Facebook", tiktok:"TikTok"}, SVC_NET = {instagram:"ig", facebook:"fb", tiktok:"tt"};
+  let buf = null; try { buf = JSON.parse(localStorage.getItem("pepite-buffer") || "null"); } catch(e){}
+  const bufSave = (b) => { buf = Object.assign({}, b, {code: store && store.code}); try { localStorage.setItem("pepite-buffer", JSON.stringify(b)); } catch(e){} renderBuf(); try { renderPubList(); } catch(e){} };
+  const bufMine = () => !!(buf && store && buf.code === store.code);
+  const bufOn = () => bufMine() && !!(buf.connected && (buf.selected || []).length);
+  function renderBuf(){
+    const on = bufMine() && !!buf.connected;
+    $("bufConnect").classList.toggle("hidden", on); $("bufLinked").classList.toggle("hidden", !on);
+    $("bufState").textContent = on ? "Buffer est relié : coche les réseaux où publier." : "Pas encore relié. Avec Buffer (gratuit jusqu’à 3 réseaux), Pépite publie directement sur Instagram, Facebook et TikTok, texte compris.";
+    const box = $("bufChans"); box.innerHTML = "";
+    (on ? buf.channels : []).forEach(c => {
+      const l = document.createElement("label"); l.className = "bufchan";
+      const i = document.createElement("input"); i.type = "checkbox"; i.checked = (buf.selected || []).includes(c.id);
+      i.onchange = async () => {
+        const sel = [...box.querySelectorAll("input")].map((x, k) => x.checked ? buf.channels[k].id : null).filter(Boolean);
+        try { bufSave(await relayCall({action:"bufferSelect", code: store.code, selected: sel})); } catch(e){ $("bufMsg").textContent = "Le choix n’a pas pu être enregistré."; }
+      };
+      l.append(i, document.createTextNode((SVC[c.service] || c.service) + " · " + c.name)); box.append(l);
+    });
+    if (on && !buf.channels.length) box.textContent = "Aucun réseau relié dans Buffer : ajoute Instagram, Facebook ou TikTok dans l’appli Buffer, puis touche « Délier » et relie à nouveau.";
+  }
+  async function bufLoad(){
+    if (!store || !store.code || !relayReady()) return;
+    try { bufSave(await relayCall({action:"bufferStatus", code: store.code})); } catch(e){}
+  }
+  $("bufGo").onclick = async () => {
+    const key = $("bufKey").value.trim();
+    if (!store || !store.code){ $("bufMsg").textContent = "Enregistre d’abord le magasin avec son code."; return; }
+    if (key.length < 10){ $("bufMsg").textContent = "Colle la clé Buffer complète."; $("bufKey").focus(); return; }
+    $("bufGo").disabled = true; $("bufMsg").textContent = "Connexion à Buffer…";
+    try { bufSave(await relayCall({action:"bufferConnect", code: store.code, key})); $("bufKey").value = ""; $("bufMsg").textContent = "Buffer est relié ✓"; }
+    catch(e){ $("bufMsg").textContent = e.message === "cle" ? "Buffer refuse cette clé : vérifie-la ou crée-en une nouvelle." : "Connexion impossible pour le moment. Réessaie."; }
+    $("bufGo").disabled = false;
+  };
+  $("bufOff").onclick = async () => {
+    try { bufSave(await relayCall({action:"bufferDisconnect", code: store.code})); $("bufMsg").textContent = "Buffer est délié."; } catch(e){ $("bufMsg").textContent = "Impossible pour le moment. Réessaie."; }
+  };
+  const toB64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
+  let bufBusy = false;
+  async function publishDirect(btn){
+    if (bufBusy) return;
+    const files = ["ig", "fb", "tt"].map(n => filesFor(n)).find(Boolean);
+    if (!files){ pub("Le visuel est encore en préparation, réessaie dans une seconde.", true); return; }
+    bufBusy = true; btn.disabled = true; btn.textContent = "Publication en cours…"; pub("");
+    try {
+      const images = await Promise.all(files.map(toB64));
+      const d = await relayCall({action:"bufferPublish", code: store.code, text: $("caption").value, images});
+      const ok = d.results.filter(r => r.ok), ko = d.results.filter(r => !r.ok);
+      ok.forEach(r => { done[SVC_NET[r.service]] = true; });
+      renderTabs(); renderPreview(); renderPubList();
+      if (ok.length && !ko.length){ if (current.queueId) finishQueued(); confetti(); }
+      pub((ok.length ? "Publié sur " + ok.map(r => SVC[r.service] + " ✓").join(", ") + "." : "") + (ko.length ? " Pas publié sur " + ko.map(r => SVC[r.service] + " (" + r.message + ")").join(", ") + "." : ""), !!ko.length);
+    } catch(e){
+      pub(e.message === "nonrelie" ? "Buffer n’est plus relié : relie-le dans les réglages." : "La publication n’a pas abouti. Vérifie ta connexion et réessaie.", true);
+      bufLoad();
+    }
+    bufBusy = false;
+  }
+  setTimeout(() => { try { renderBuf(); } catch(e){} bufLoad(); }, 800);
+  $("saveSetup").addEventListener("click", () => setTimeout(bufLoad, 1500));
   // Copie le texte tout de suite, pendant le geste de l'utilisateur, avant d'ouvrir le partage
   function copyNow(text){
     let ok = false;
