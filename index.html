@@ -2528,6 +2528,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       renderTabs(); renderPreview(); renderPubList();
       if (ok.length && !ko.length){ if (current.queueId) finishQueued(); confetti(); }
       pub((ok.length ? "Publié sur " + ok.map(r => SVC[r.service] + " ✓").join(", ") + "." : "") + (ko.length ? " Pas publié sur " + ko.map(r => SVC[r.service] + " (" + r.message + ")").join(", ") + "." : ""), !!ko.length);
+      const testUrl = (ko.find(r => r.url) || {}).url;
+      if (testUrl){ const l = document.createElement("a"); l.href = testUrl; l.target = "_blank"; l.rel = "noopener"; l.textContent = " Tester l’adresse de l’image"; l.style.display = "block"; l.style.marginTop = "6px"; $("pubStatus").append(l); }
     } catch(e){
       pub(e.message === "nonrelie" ? "Buffer n’est plus relié : relie-le dans les réglages." : "La publication n’a pas abouti. Vérifie ta connexion et réessaie.", true);
       bufLoad();
