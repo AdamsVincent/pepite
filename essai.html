@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Essayez Pépite avec votre produit</title>
-<meta name="description" content="Une photo de votre produit, 30 secondes, et votre publication Facebook et Instagram est prête. Essai gratuit, sans rien installer.">
+<meta name="description" content="Une photo de votre produit, 30 secondes, et votre publication est prête à partir sur les réseaux sociaux de votre choix, en 1 clic. Essai gratuit, sans rien installer.">
 <meta name="theme-color" content="#1B2A4A">
 <meta property="og:title" content="Essayez Pépite avec votre produit">
-<meta property="og:description" content="Une photo, 30 secondes, et votre publication Facebook et Instagram est prête. Essai gratuit.">
+<meta property="og:description" content="Une photo, 30 secondes, et votre publication est prête à partir sur les réseaux sociaux de votre choix, en 1 clic. Essai gratuit.">
 <meta property="og:image" content="https://pepite.adamspartners.fr/icon-512.png">
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -75,6 +75,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 #cv{display:block; width:100%; height:auto; border-radius:18px; margin-top:16px; background:var(--field)}
 .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 .two .btn{margin-top:10px; font-size:16px; padding:14px 8px}
+.demo{margin-top:16px;padding:16px;border-radius:18px;background:var(--gold-soft)}
+.demo .btn{margin-top:0;line-height:1.25}
+.tagdemo{display:block;margin-top:6px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.demo .small{color:var(--ink);opacity:.85}
+.nets{margin-top:12px;display:grid;gap:8px}
+.net{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font-weight:700;transition:border-color .3s,background .3s}
+.net .st{font-weight:400;color:var(--muted)}
+.net.ok{border-color:var(--ok)}
+.net.ok .st{color:var(--ok);font-weight:700}
+.chrono{text-align:right;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:22px}
 .offer{background:var(--navy); color:var(--on-navy); border:0}
 .offer h2{color:#E5B65C}
 .offer p{margin:10px 0 0; color:#DDE2EE}
@@ -94,7 +104,7 @@ footer a{color:inherit}
 <div class="hero"><div class="in">
   <div class="brand"><img src="icon-192.png" alt=""><div><b>Pépite</b><span>by Adams Partners</span></div></div>
   <h1>Voyez ce que Pépite fait avec <em>votre</em> produit</h1>
-  <p>Une photo, 30 secondes, et votre publication Facebook et Instagram est prête. Gratuit, sans rien installer.</p>
+  <p>Une photo, 30 secondes, et votre publication est prête à partir sur les réseaux sociaux de votre choix, en 1 clic. Essai gratuit, sans rien installer.</p>
 </div></div>
 
 <main>
@@ -151,11 +161,21 @@ footer a{color:inherit}
     <section class="card">
       <h2>Votre publication est prête</h2>
       <canvas id="cv" width="1080" height="1350" role="img" aria-label="Visuel de votre publication"></canvas>
+      <div class="demo">
+        <button class="btn gold" id="demoPub" type="button">🚀 Publier maintenant sur Instagram + Facebook + TikTok<span class="tagdemo">Démonstration</span></button>
+        <div class="nets hidden" id="demoNets" aria-live="polite">
+          <div class="net" id="dn0"><span class="nm">Instagram</span><span class="st">En cours…</span></div>
+          <div class="net" id="dn1"><span class="nm">Facebook</span><span class="st">En cours…</span></div>
+          <div class="net" id="dn2"><span class="nm">TikTok</span><span class="st">En cours…</span></div>
+          <div class="chrono"><span id="chrono">0,0</span> s</div>
+        </div>
+        <p class="small">Avec Pépite installé, vos comptes Instagram, Facebook et TikTok sont reliés une fois pour toutes : un geste, et votre post part sur vos trois réseaux. Ici, c’est une démonstration : rien n’est publié sur vos comptes.</p>
+      </div>
       <label for="cap">Le texte à publier</label>
       <textarea id="cap" readonly></textarea>
       <div class="two">
-        <button class="btn" id="copy" type="button">Copier le texte</button>
-        <button class="btn" id="dl" type="button">Enregistrer l’image</button>
+        <button class="btn ghost" id="copy" type="button">Copier le texte</button>
+        <button class="btn ghost" id="dl" type="button">Enregistrer l’image</button>
       </div>
       <p class="small" id="left"></p>
       <button class="btn ghost" id="again" type="button">Essayer avec un autre produit</button>
@@ -164,6 +184,7 @@ footer a{color:inherit}
       <h2>La même chose, tous les jours, sur votre téléphone</h2>
       <p>Avec Pépite installé, vous choisissez votre style, vos couleurs et votre logo, et vous publiez en un geste.</p>
       <ul>
+        <li>Publication sur les réseaux sociaux de votre choix, en 1 clic</li>
         <li>8 publications offertes pour essayer</li>
         <li>Installation faite avec vous, par téléphone</li>
         <li>Ensuite à partir de 19 € par mois, sans engagement</li>
@@ -310,7 +331,28 @@ footer a{color:inherit}
     }
     busy = false; $("go").disabled = false;
   };
+  // ---------- Démonstration de la publication directe ----------
+  let demoTimer = null;
+  function resetDemo(){
+    clearInterval(demoTimer); $("demoNets").classList.add("hidden"); $("demoPub").disabled = false;
+    $("demoPub").innerHTML = '🚀 Publier maintenant sur Instagram + Facebook + TikTok<span class="tagdemo">Démonstration</span>';
+    [0, 1, 2].forEach(i => { $("dn" + i).classList.remove("ok"); $("dn" + i).querySelector(".st").textContent = "En cours…"; });
+    $("chrono").textContent = "0,0";
+  }
+  $("demoPub").onclick = () => {
+    resetDemo(); $("demoPub").disabled = true; $("demoNets").classList.remove("hidden");
+    const steps = [1.1, 1.8, 2.4], end = 2.6, t0 = performance.now();
+    const quick = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const tick = () => {
+      const t = quick ? end : (performance.now() - t0) / 1000;
+      $("chrono").textContent = Math.min(t, end).toFixed(1).replace(".", ",");
+      steps.forEach((s, i) => { if (t >= s && !$("dn" + i).classList.contains("ok")){ $("dn" + i).classList.add("ok"); $("dn" + i).querySelector(".st").textContent = "Publié ✓"; } });
+      if (t >= end){ clearInterval(demoTimer); $("demoPub").innerHTML = '✓ Publié sur vos 3 réseaux<span class="tagdemo">Démonstration</span>'; }
+    };
+    demoTimer = setInterval(tick, 50); tick();
+  };
   $("again").onclick = () => {
+    resetDemo();
     photo = null; photoImg = null; $("thumb").style.display = "none"; $("fItem").value = ""; $("fPrice").value = "";
     $("resWrap").classList.add("hidden"); $("formWrap").classList.remove("hidden"); window.scrollTo({ top: 0 });
   };
