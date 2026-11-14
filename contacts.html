@@ -32,7 +32,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(-
 <main>
   <h1>Mes contacts Pépite</h1>
   <p class="sub">Les commerçants qui ont essayé la page « Essayez Pépite ». Les plus récents en premier.</p>
-  <div class="bar"><input id="code" type="text" autocapitalize="characters" autocomplete="off" aria-label="Votre code" placeholder="Votre code"><button id="go" type="button">Afficher</button></div>
+  <div class="bar"><input id="code" type="password" autocapitalize="characters" autocomplete="off" aria-label="Code administrateur" placeholder="Code administrateur"><button id="go" type="button">Afficher</button></div>
   <div id="msg" role="status" aria-live="polite"></div>
   <div id="list"></div>
 </main>
@@ -41,7 +41,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(-
   const RELAY_URL = "https://pepite.throbbing-glade-a7b3.workers.dev";
   const $ = (id) => document.getElementById(id);
   const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  try { $("code").value = (location.hash || "").slice(1) || JSON.parse(localStorage.getItem("arrivage-store") || "{}").code || ""; } catch(e){}
+  try { $("code").value = decodeURIComponent((location.hash || "").slice(1)); } catch(e){}
   const day = (iso) => iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "";
   async function load(){
     const code = $("code").value.trim().toUpperCase(); if (!code){ $("code").focus(); return; }
@@ -49,7 +49,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(-
     try {
       const r = await fetch(RELAY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, action: "leads" }) });
       const d = await r.json();
-      if (!r.ok){ $("msg").textContent = r.status === 403 || r.status === 401 ? "Ce code ne permet pas de voir les contacts." : "La liste n’a pas pu être chargée."; return; }
+      if (!r.ok){ $("msg").textContent = r.status === 403 || r.status === 401 ? "Code administrateur incorrect." : "La liste n’a pas pu être chargée."; return; }
       const L = d.leads || [], hot = L.filter(l => l.interesse).length;
       $("msg").textContent = L.length ? `${L.length} contact${L.length > 1 ? "s" : ""}, dont ${hot} demande${hot > 1 ? "s" : ""} d’installation.` : "Aucun contact pour l’instant.";
       $("list").innerHTML = L.map(l => {

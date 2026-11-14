@@ -348,6 +348,9 @@ canvas{display:block; width:100%; height:auto}
           <p class="hintline" id="bufExp"></p>
           <button class="btn ghost" id="bufOff" type="button">Délier Buffer</button>
         </div>
+        <label for="bufAdmin">Code administrateur Adams Partners</label>
+        <input type="password" id="bufAdmin" autocomplete="off" spellcheck="false" placeholder="Réservé à Adams Partners">
+        <p class="note">Nécessaire pour relier, délier ou changer les réseaux. Il n’est pas enregistré sur ce téléphone.</p>
         <p class="hintline" id="bufMsg" role="status" aria-live="polite"></p>
       </div>
       <button class="btn big" id="saveSetup" type="button">Enregistrer le magasin</button>
@@ -1040,6 +1043,7 @@ canvas{display:block; width:100%; height:auto}
     const resp = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(images ? {code, prompt, images} : {code, prompt, image})});
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok){
+      if (data.error === "jour") throw new Error("Limite d’utilisation du jour atteinte : elle repart demain. Texte créé avec les modèles de base.");
       if (data.error === "quota") throw new Error(`Quota du mois atteint (${data.limite || 150} posts) : il repart à zéro le 1er du mois prochain. Texte créé avec les modèles de base.`);
       const msgs = {401:"Code d’accès invalide : vérifie-le à l’étape 1.", 429:"Trop de demandes d’affilée, réessaie dans une minute.", 503:"Le service IA est momentanément surchargé : réessaie dans un instant."};
       throw new Error((msgs[resp.status] || "La génération par IA n’a pas abouti.") + " Texte créé avec les modèles de base.");
@@ -2609,7 +2613,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const i = document.createElement("input"); i.type = "checkbox"; i.checked = (buf.selected || []).includes(c.id);
       i.onchange = async () => {
         const sel = [...box.querySelectorAll("input")].map((x, k) => x.checked ? buf.channels[k].id : null).filter(Boolean);
-        try { bufSave(await relayCall({action:"bufferSelect", code: store.code, selected: sel})); } catch(e){ $("bufMsg").textContent = "Le choix n’a pas pu être enregistré."; }
+        try { bufSave(await relayCall({action:"bufferSelect", code: store.code, admin: $("bufAdmin").value, selected: sel})); } catch(e){ $("bufMsg").textContent = e.message === "admin" ? "Saisis le code administrateur Adams Partners pour changer les réseaux." : "Le choix n’a pas pu être enregistré."; renderBuf(); }
       };
       l.append(i, document.createTextNode((SVC[c.service] || c.service) + " · " + c.name)); box.append(l);
     });
@@ -2625,12 +2629,12 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (!store || !store.code){ $("bufMsg").textContent = "Enregistre d’abord le magasin avec son code."; return; }
     if (key.length < 10){ $("bufMsg").textContent = "Colle la clé Buffer complète."; $("bufKey").focus(); return; }
     $("bufGo").disabled = true; $("bufMsg").textContent = "Connexion à Buffer…";
-    try { bufSave(await relayCall({action:"bufferConnect", code: store.code, key, days: Number($("bufDays").value) || 365})); $("bufKey").value = ""; $("bufMsg").textContent = "Buffer est relié ✓"; }
-    catch(e){ $("bufMsg").textContent = e.message === "cle" ? "Buffer refuse cette clé : vérifie-la ou crée-en une nouvelle." : "Connexion impossible pour le moment. Réessaie."; }
+    try { bufSave(await relayCall({action:"bufferConnect", code: store.code, admin: $("bufAdmin").value, key, days: Number($("bufDays").value) || 365})); $("bufKey").value = ""; $("bufAdmin").value = ""; $("bufMsg").textContent = "Buffer est relié ✓"; }
+    catch(e){ $("bufMsg").textContent = e.message === "admin" ? "Code administrateur Adams Partners manquant ou incorrect." : e.message === "cle" ? "Buffer refuse cette clé : vérifie-la ou crée-en une nouvelle." : "Connexion impossible pour le moment. Réessaie."; }
     $("bufGo").disabled = false;
   };
   $("bufOff").onclick = async () => {
-    try { bufSave(await relayCall({action:"bufferDisconnect", code: store.code})); $("bufMsg").textContent = "Buffer est délié."; } catch(e){ $("bufMsg").textContent = "Impossible pour le moment. Réessaie."; }
+    try { bufSave(await relayCall({action:"bufferDisconnect", code: store.code, admin: $("bufAdmin").value})); $("bufAdmin").value = ""; $("bufMsg").textContent = "Buffer est délié."; } catch(e){ $("bufMsg").textContent = e.message === "admin" ? "Saisis le code administrateur Adams Partners pour délier Buffer." : "Impossible pour le moment. Réessaie."; }
   };
   const toB64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
   // Ce qui part, et sous quel format : publication, story (Instagram, Facebook) ou Reel pour une vidéo
