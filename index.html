@@ -2395,19 +2395,35 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const k = kind(), out = {};
     if (k === "video") return out;
     const sl = slides();
-    const keys = [...new Set(nets().map(n => specKey(n, k)).concat(wantStory() ? ["story"] : []))];
+    const storyKeys = !wantStory() ? [] : fmtVal() === "both" ? nets().filter(n => n !== "tt").map(n => "story_" + n) : ["story"];
+    const keys = [...new Set(nets().map(n => specKey(n, k)).concat(storyKeys))];
     for (const key of keys){
-      const F = SPECS[key], c = document.createElement("canvas");
+      const note = key.startsWith("story_") ? NETS[key.slice(6)] : "";
+      const F = note ? Object.assign({}, SPECS.story, {bottom: 480}) : SPECS[key], c = document.createElement("canvas");
       c.width = F.w; c.height = F.h;
       const x = c.getContext("2d"), files = [];
       for (let i = 0; i < sl.length; i++){
         drawSlide(x, F, sl[i], i, sl.length, 99);
+        if (note) drawStoryNote(x, F, "👉 Tous les détails dans notre dernière publication sur " + note);
         const b = await new Promise(res => c.toBlob(res, "image/jpeg", 0.92));
         files.push(new File([b], `${slug()}-${F.label}${sl.length > 1 ? "-" + (i + 1) : ""}.jpg`, {type:"image/jpeg"}));
       }
       out[key] = files;
     }
     return out;
+  }
+  // Bandeau en bas de la story : renvoie vers la publication du même article
+  function drawStoryNote(x, F, text){
+    const W = F.w, maxW = W - 2 * F.side - 80;
+    let fs = 42, lines;
+    for (;;){ lines = wrap(x, text, maxW, `700 ${fs}px "Atkinson Hyperlegible", sans-serif`); if (lines.length <= 2 || fs <= 30) break; fs -= 2; }
+    lines = lines.slice(0, 2);
+    const lh = Math.round(fs * 1.25), bw = Math.max(...lines.map(t => x.measureText(t).width)) + 80, bh = lines.length * lh + 44, top = F.h - F.bottom + 84, l = (W - bw) / 2;
+    x.save();
+    x.fillStyle = "rgba(255,255,255,.95)"; roundRect(x, l, top, bw, bh, 34); x.fill();
+    x.fillStyle = "#1B2A4A"; x.textAlign = "center"; x.textBaseline = "middle";
+    lines.forEach((t, k) => x.fillText(t, W / 2, top + 22 + lh * k + lh / 2 + 1));
+    x.restore();
   }
   const filesFor = (net) => kind() === "video" ? (videoFile ? [videoFile] : null) : (cache[specKey(net, kind())] || null);
 
@@ -2624,7 +2640,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       if (k === "video"){ plan.push({service: c.service, type: c.service === "tiktok" ? "post" : "reel", media: "video"}); return; }
       if (c.service === "tiktok"){ if (f !== "story") plan.push({service: c.service, type: "post", media: "ttphoto"}); return; }
       if (f !== "story") plan.push({service: c.service, type: "post", media: "feed"});
-      if (f !== "post") plan.push({service: c.service, type: "story", media: "story"});
+      if (f !== "post") plan.push({service: c.service, type: "story", media: f === "both" ? "story_" + SVC_NET[c.service] : "story"});
     });
     return plan;
   }
