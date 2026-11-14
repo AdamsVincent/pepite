@@ -293,7 +293,7 @@ footer a{color:inherit}
   async function relay(body){
     const r = await fetch(RELAY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     let d = {}; try { d = await r.json(); } catch(e){}
-    if (!r.ok){ const e = new Error(d.error || "erreur"); e.status = r.status; throw e; }
+    if (!r.ok){ const e = new Error(d.error || "erreur"); e.status = r.status; e.detail = d.detail || ""; throw e; }
     return d;
   }
   const ERR = {
@@ -326,7 +326,7 @@ footer a{color:inherit}
       $("formWrap").classList.add("hidden"); $("resWrap").classList.remove("hidden"); setStatus("");
       $("resWrap").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     } catch(e){
-      setStatus(ERR[e.message] || "La publication n’a pas pu être créée. Vérifiez votre connexion et réessayez.", true);
+      setStatus((ERR[e.message] || "La publication n’a pas pu être créée. Vérifiez votre connexion et réessayez.") + (e.detail ? '<br><small style="font-weight:400">Détail : ' + String(e.detail).replace(/[<>&]/g, "") + "</small>" : ""), true);
       if (e.message === "limite"){ $("resWrap").classList.remove("hidden"); $("resWrap").querySelector(".card").classList.add("hidden"); }
     }
     busy = false; $("go").disabled = false;
