@@ -559,8 +559,14 @@ canvas{display:block; width:100%; height:auto}
       <input type="radio" name="bgm" id="bg0" value="none" checked><label for="bg0">Photo d’origine</label>
       <input type="radio" name="bgm" id="bg1" value="blur"><label for="bg1">Fond flouté</label>
       <input type="radio" name="bgm" id="bg2" value="frame"><label for="bg2">Cadre vitrine</label>
-      <input type="radio" name="bgm" id="bg3" value="mag"><label for="bg3">Carte magazine</label>
-      <input type="radio" name="bgm" id="bg4" value="white"><label for="bg4">Détourage fond blanc</label>
+      <input type="radio" name="bgm" id="bg3" value="decor"><label for="bg3">✨ Décor de mon métier</label>
+    </div>
+    <div class="chips hidden" id="decorOpts" role="radiogroup" aria-label="Choix du décor" style="margin-top:10px">
+      <input type="radio" name="dvar" id="dv0" value="auto" checked><label for="dv0">Varier à chaque post</label>
+      <input type="radio" name="dvar" id="dv1" value="0"><label for="dv1">Décor 1</label>
+      <input type="radio" name="dvar" id="dv2" value="1"><label for="dv2">Décor 2</label>
+      <input type="radio" name="dvar" id="dv3" value="2"><label for="dv3">Décor 3</label>
+      <input type="checkbox" id="wholeOn"><label for="wholeOn">Photo entière</label>
     </div>
     <div class="chips" style="margin-top:10px">
       <input type="checkbox" id="autoLight" checked><label for="autoLight">Lumière auto</label>
@@ -1261,9 +1267,11 @@ ${p.multi ? "- Structure : une accroche d’ensemble en première ligne (par exe
 
 - Écris toujours les prix avec le symbole €, par exemple « 59 € ».
 ${EVIN_RULE}
+- Présente uniquement l’article que vend ce type de commerce : le reste de la photo (meuble support, plante, objets autour) est du décor, n’en parle pas, sauf si le commerçant l’a nommé.
+- Dans « cadre », donne le rectangle qui entoure entièrement cet article sur la PREMIÈRE photo, en pourcentage de la largeur et de la hauteur de la photo : [gauche, haut, droite, bas], de 0 à 100, sans rien couper de l’article. Si l’article occupe presque toute la photo ou si tu n’es pas sûr, mets [0,0,100,100].
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"alcool":false}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"alcool":false,"cadre":[0,0,100,100]}`;
   }
 
   // ---------- Mode démo sans IA ----------
@@ -1335,6 +1343,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (p.type === "promo" && (!p.what || !p.tag)) { setStatus("Indique ce qui est en promo et la remise (en % ou en nouveau prix).", true); return; }
 
     busy = true; $("generate").disabled = true;
+    if (bgMode() === "decor") nextDecor();
     let result = null, mode = "ia";
     const relayOn = relayReady() && store.code;
     if (relayOn) {
@@ -1773,7 +1782,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   const srcW = (s) => s.videoWidth || s.naturalWidth || s.width, srcH = (s) => s.videoHeight || s.naturalHeight || s.height;
   const autoOn = () => { const el = $("autoLight"); return !el || el.checked; };
   const bgMode = () => radioVal("bgm") || "none";
-  const LAYOUTS = ["blur", "frame", "mag"];               // mises en page sans détourage : fiables avec toutes les photos
+  const LAYOUTS = ["blur", "frame", "decor"];               // mises en page sans détourage : fiables avec toutes les photos
   const needsCut = () => bgMode() === "white";
 
   // Retouche automatique : niveaux, balance des blancs douce, exposition, légère saturation
@@ -2039,7 +2048,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   // Détourer toutes les photos du post puis rafraîchir
   async function applyBackground(){
     const mode = bgMode();
-    try { localStorage.setItem("pepite-bg", mode); localStorage.setItem("pepite-auto", autoOn() ? "1" : "0"); } catch(e){}
+    try { localStorage.setItem("pepite-bg", mode); localStorage.setItem("pepite-auto", autoOn() ? "1" : "0"); localStorage.setItem("pepite-dvar", radioVal("dvar") || "auto"); localStorage.setItem("pepite-whole", $("wholeOn").checked ? "1" : "0"); } catch(e){}
+    $("decorOpts").classList.toggle("hidden", mode !== "decor");
+    if (mode === "decor"){ $("bgHint").textContent = "Un décor propre à votre métier, qui change à chaque post. La photo n’est jamais détourée ; l’IA cadre sur votre article. « Photo entière » garde la photo telle quelle."; if (current.s) refresh(); return; }
     if (!needsCut() || !photos.length){ $("bgHint").textContent = ""; if (current.s) refresh(); return; }
     const first = !SEG.session;
     $("bgHint").textContent = first ? "Préparation du détourage (la première fois, quelques secondes)…" : "Détourage en cours…";
@@ -2056,9 +2067,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
 
   document.querySelectorAll('input[name="bgm"]').forEach(r => r.addEventListener("change", applyBackground));
   $("autoLight").addEventListener("change", applyBackground);
+  document.querySelectorAll('input[name="dvar"]').forEach(r => r.addEventListener("change", applyBackground));
+  $("wholeOn").addEventListener("change", applyBackground);
   try {
-    let pb = localStorage.getItem("pepite-bg"); if (["wood", "concrete", "brand"].includes(pb)) pb = "blur";
+    let pb = localStorage.getItem("pepite-bg"); if (["wood", "concrete", "brand"].includes(pb)) pb = "blur"; if (["mag", "white"].includes(pb)) pb = "none";
     if (pb){ const r = document.querySelector(`input[name="bgm"][value="${pb}"]`); if (r) r.checked = true; }
+    const dv = localStorage.getItem("pepite-dvar"); if (dv){ const r = document.querySelector(`input[name="dvar"][value="${dv}"]`); if (r) r.checked = true; }
+    if (localStorage.getItem("pepite-whole") === "1") $("wholeOn").checked = true;
+    $("decorOpts").classList.toggle("hidden", bgMode() !== "decor");
     if (localStorage.getItem("pepite-auto") === "0") $("autoLight").checked = false;
   } catch(e){}
 
@@ -2121,7 +2137,196 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     const iw = srcW(src), ih = srcH(src), sc = Math.max(w / iw, h / ih) * (z || 1);
     x.drawImage(src, l + (w - iw * sc) / 2, tp + (h - ih * sc) / 2, iw * sc, ih * sc);
   }
+  // ---------- Décor de mon métier : la photo reste entière, seul l'environnement change ----------
+  // 3 variantes par métier, qui tournent d'un post à l'autre. Matières dessinées par Pépite (rien à télécharger).
+  const DECORS = {
+    occasion: [["papier", "dore"], ["briques", "polaroid"], ["patine", "carte"]],
+    neuf:     [["sol", "sol"], ["kraft", "scotch"], ["poudre", "arrondie"]],
+    mode:     [["briques", "polaroid"], ["marbre", "arrondie"], ["kraft", "scotch"]],
+    maison:   [["sol", "sol"], ["solgris", "sol"], ["kraft", "scotch"]],
+    tech:     [["nuit", "lumineuse"], ["nuitvert", "lumineuse"], ["sol", "sol"]],
+    sport:    [["briques", "polaroid"], ["nuit", "lumineuse"], ["kraft", "scotch"]],
+    culture:  [["kraft", "scotch"], ["papier", "dore"], ["patine", "carte"]],
+    fleur:    [["poudre", "arrondie"], ["sauge", "arrondie"], ["kraft", "scotch"]],
+    beaute:   [["marbre", "arrondie"], ["poudre", "arrondie"], ["kraft", "scotch"]],
+    epicerie: [["patine", "carte"], ["plan", "feuille"], ["kraft", "scotch"]],
+    bouche:   [["plan", "feuille"], ["patine", "carte"], ["kraft", "scotch"]],
+    snack:    [["briques", "polaroid"], ["patine", "carte"], ["nuit", "lumineuse"]],
+    createur: [["kraft", "scotch"], ["poudre", "arrondie"], ["marbre", "arrondie"]]
+  };
+  // couleur d'encre sous le titre (bas de l'image), pour que le texte blanc reste lisible
+  const DECOR_INK = {papier: "14,28,24", briques: "40,16,10", patine: "34,30,26", sol: "48,30,16", solgris: "34,34,36", kraft: "62,40,18", poudre: "88,52,58", sauge: "38,60,44", marbre: "60,50,52", plan: "44,24,10", nuit: "4,8,18", nuitvert: "4,14,12"};
+  const decorList = () => DECORS[(current.s && current.s.kind) || "occasion"] || DECORS.occasion;
+  const decorKey = () => "pepite-decor-" + ((store && store.code) || "x");
+  function nextDecor(){                                   // à chaque nouveau post : décor suivant, jamais deux fois le même d'affilée
+    try { const n = ((parseInt(localStorage.getItem(decorKey()) || "-1", 10) + 1) % 3 + 3) % 3; localStorage.setItem(decorKey(), String(n)); } catch(e){}
+  }
+  function decorIdx(){
+    const v = radioVal("dvar") || "auto";
+    if (v !== "auto") return parseInt(v, 10) || 0;
+    try { return Math.max(0, parseInt(localStorage.getItem(decorKey()) || "0", 10) % 3); } catch(e){ return 0; }
+  }
+  function rngOf(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function grain(c, W, H, cell, alpha, seed, stretch){
+    const r = rngOf(seed), sw = Math.max(2, Math.round(W / cell / (stretch || 1))), sh = Math.max(2, Math.round(H / cell));
+    const s = document.createElement("canvas"); s.width = sw; s.height = sh;
+    const g = s.getContext("2d"), id = g.createImageData(sw, sh);
+    for (let i = 0; i < sw * sh; i++){ const v = r() * 255; id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = v; id.data[i*4+3] = 255; }
+    g.putImageData(id, 0, 0);
+    c.save(); c.globalAlpha = alpha; c.globalCompositeOperation = "overlay"; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; c.drawImage(s, 0, 0, W, H); c.restore();
+  }
+  function woodInto(c, l, t, W, H, a, b, seed){
+    const r = rngOf(seed), n = 5, ph = H / n;
+    c.save(); c.beginPath(); c.rect(l, t, W, H); c.clip();
+    for (let i = 0; i < n; i++){                            // une lame de parquet après l'autre
+      const y0 = t + i * ph, g = c.createLinearGradient(l, y0, l + W, y0 + ph);
+      g.addColorStop(0, i % 2 ? a : b); g.addColorStop(1, i % 2 ? b : a); c.fillStyle = g; c.fillRect(l, y0, W, ph);
+      c.fillStyle = "rgba(" + (r() < 0.5 ? "0,0,0," : "255,255,255,") + (0.03 + r() * 0.06) + ")"; c.fillRect(l, y0, W, ph);
+      for (let j = 0; j < 34; j++){                         // veines du bois
+        const yy = y0 + r() * ph, amp = (2 + r() * 7) * W / 1080, f = 0.002 + r() * 0.006, ph0 = r() * 6;
+        c.strokeStyle = "rgba(" + (r() < 0.7 ? "40,22,8," : "255,240,220,") + (0.06 + r() * 0.12) + ")"; c.lineWidth = (0.6 + r() * 2.2) * W / 1080;
+        c.beginPath(); for (let x = l; x <= l + W; x += 18){ const yv = yy + Math.sin(x * f + ph0) * amp; x === l ? c.moveTo(x, yv) : c.lineTo(x, yv); } c.stroke();
+      }
+      c.fillStyle = "rgba(0,0,0,.32)"; c.fillRect(l, y0 + ph - 2, W, Math.max(2, W / 500));
+    }
+    c.restore(); grain(c, W, H, 3, 0.18, seed + 7);
+  }
+  function leaves(c, x0, y0, ang, len, k, seed){
+    const r = rngOf(seed), cols = ["#68846a", "#96b292", "#7c9c7a"], n = 9, pts = [];
+    for (let i = 0; i <= n; i++){ const t = i / n; pts.push([x0 + Math.cos(ang) * len * t + Math.sin(t * 3) * 12 * k, y0 + Math.sin(ang) * len * t]); }
+    c.save(); c.strokeStyle = cols[0]; c.lineWidth = 5 * k; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke();
+    for (let i = 1; i <= n; i++){ const [x, y] = pts[i], s = 34 * k * (1 - i / (n + 3));
+      for (const side of [-1, 1]){ const a = ang + side * 1.0; c.fillStyle = cols[1 + Math.floor(r() * 2)];
+        c.beginPath(); c.ellipse(x + Math.cos(a) * s * 0.9, y + Math.sin(a) * s * 0.9, s * 0.75, s * 0.5, a, 0, Math.PI * 2); c.fill(); } }
+    c.restore();
+  }
+  const DTEX = {};
+  function decorBg(name, W, H, F){                        // fond dessiné une fois puis gardé en mémoire
+    const key = name + W + "x" + H + "/" + F.bottom;
+    if (DTEX[key]) return DTEX[key];
+    const cv2 = document.createElement("canvas"); cv2.width = W; cv2.height = H; const c = cv2.getContext("2d"), k = W / 1080;
+    const flat = (col) => { c.fillStyle = col; c.fillRect(0, 0, W, H); };
+    const vignette = (a) => { const g = c.createRadialGradient(W / 2, H * 0.42, W * 0.25, W / 2, H * 0.42, H * 0.85); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0," + a + ")"); c.fillStyle = g; c.fillRect(0, 0, W, H); };
+    if (name === "papier"){
+      flat("#2e4842"); grain(c, W, H, 40, 0.35, 3); grain(c, W, H, 3, 0.25, 4);
+      c.strokeStyle = "rgba(140,186,166,.38)"; c.fillStyle = "rgba(150,196,176,.45)"; c.lineWidth = 3 * k; const s = 120 * k;
+      for (let y = -s, row = 0; y < H + s; y += s, row++) for (let x = -s; x < W + s; x += s){ const cx = x + (row % 2 ? s / 2 : 0), cy = y;
+        c.beginPath(); c.moveTo(cx, cy - 34 * k); c.lineTo(cx + 22 * k, cy); c.lineTo(cx, cy + 34 * k); c.lineTo(cx - 22 * k, cy); c.closePath(); c.stroke();
+        c.beginPath(); c.arc(cx, cy, 6 * k, 0, Math.PI * 2); c.fill(); }
+      vignette(0.55);
+    } else if (name === "briques"){
+      flat("#c4bcb0"); const r = rngOf(9), bh = 58 * k, bw = 150 * k, cols = ["#964834", "#a4523a", "#8a402e", "#ac6046", "#7e3a2a"];
+      for (let y = 0, row = 0; y < H; y += bh, row++) for (let x = -bw; x < W + bw; x += bw){ c.fillStyle = cols[Math.floor(r() * cols.length)]; c.fillRect(x + (row % 2 ? 0 : bw / 2) + 4 * k, y + 4 * k, bw - 8 * k, bh - 8 * k); }
+      grain(c, W, H, 6, 0.45, 10); grain(c, W, H, 60, 0.3, 11); vignette(0.6);
+    } else if (name === "patine"){
+      woodInto(c, 0, 0, W, H, "#7c7162", "#968a78", 21); c.fillStyle = "rgba(232,228,216,.22)"; c.fillRect(0, 0, W, H); vignette(0.4);
+    } else if (name === "plan"){
+      woodInto(c, 0, 0, W, H, "#7a4e2c", "#c4925e", 31); const r = rngOf(32);
+      c.fillStyle = "rgba(250,247,240,.9)";
+      for (let i = 0; i < 2600; i++){ const g = () => (r() + r() + r() - 1.5) / 1.5; const big = i < 1900;
+        const x = big ? W * 0.82 + g() * 260 * k : W * 0.12 + g() * 160 * k, y = big ? H * 0.86 + g() * 200 * k : H * 0.1 + g() * 140 * k, rr = (r() * 3 + 0.5) * k;
+        c.globalAlpha = 0.3 + r() * 0.7; c.beginPath(); c.arc(x, y, rr, 0, Math.PI * 2); c.fill(); }
+      c.globalAlpha = 1; vignette(0.35);
+    } else if (name === "sol" || name === "solgris"){
+      const floorY = H - F.bottom - (H > 1500 ? 330 : 270) * k;
+      flat(name === "sol" ? "#ece2d2" : "#e4e4e2"); grain(c, W, floorY, 40, 0.25, 41); grain(c, W, floorY, 3, 0.2, 42);
+      c.save(); c.filter = "blur(" + Math.round(22 * k) + "px)"; c.fillStyle = "rgba(255,244,220,.55)";
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++){ const ox = 560 * k + j * 170 * k, oy = -60 * k + i * 330 * k;
+        c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + 140 * k, oy); c.lineTo(ox + 260 * k, oy + 290 * k); c.lineTo(ox + 120 * k, oy + 290 * k); c.closePath(); c.fill(); }
+      c.restore();
+      if (name === "sol") woodInto(c, 0, floorY, W, H - floorY, "#9a6c46", "#6e4a2e", 43); else woodInto(c, 0, floorY, W, H - floorY, "#a29a90", "#6e6862", 44);
+      c.fillStyle = "#faf7f0"; c.fillRect(0, floorY - 14 * k, W, 14 * k);
+      cv2._floor = floorY;
+    } else if (name === "kraft"){
+      flat("#c9a577"); grain(c, W, H, 30, 0.35, 51); grain(c, W, H, 2, 0.35, 52, 4); vignette(0.35);
+    } else if (name === "poudre" || name === "sauge"){
+      flat(name === "poudre" ? "#f6e2de" : "#e4ebe0"); grain(c, W, H, 30, 0.18, 61); grain(c, W, H, 2, 0.15, 62);
+      leaves(c, -20 * k, 260 * k, -0.5, 330 * k, k, 63); leaves(c, 40 * k, -20 * k, 0.9, 300 * k, k, 64);
+      leaves(c, W + 20 * k, H * 0.62, 3.6, 330 * k, k, 65); leaves(c, W - 40 * k, H * 0.74, 4.1, 300 * k, k, 66);
+      [[140, 150, 26], [110, 250, 18]].forEach(([x, y, r]) => { c.fillStyle = "#e8aaaa"; c.beginPath(); c.arc(x * k, y * k, r * k, 0, 7); c.fill(); c.fillStyle = "#d68288"; c.beginPath(); c.arc(x * k, y * k, r * 0.45 * k, 0, 7); c.fill(); });
+    } else if (name === "marbre"){
+      flat("#f3edea"); grain(c, W, H, 50, 0.2, 71); const r = rngOf(72);
+      c.save(); c.filter = "blur(" + Math.round(2 * k) + "px)";
+      for (let i = 0; i < 9; i++){ c.strokeStyle = "rgba(150,124,124," + (0.12 + r() * 0.18) + ")"; c.lineWidth = (1 + r() * 4) * k;
+        c.beginPath(); c.moveTo(r() * W, -20); c.bezierCurveTo(r() * W, H * 0.3, r() * W, H * 0.6, r() * W, H + 20); c.stroke(); }
+      c.restore(); grain(c, W, H, 3, 0.12, 73);
+    } else {                                               // nuit / nuitvert : fond sombre et halo
+      flat(name === "nuit" ? "#0c1424" : "#0a1614");
+      const g = c.createRadialGradient(W * 0.5, H * 0.38, 0, W * 0.5, H * 0.38, W * 0.8); g.addColorStop(0, name === "nuit" ? "rgba(70,130,255,.45)" : "rgba(60,220,160,.35)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.fillStyle = "rgba(255,255,255,.07)"; for (let y = 20 * k; y < H; y += 40 * k) for (let x = 20 * k; x < W; x += 40 * k){ c.beginPath(); c.arc(x, y, 1.6 * k, 0, 7); c.fill(); }
+    }
+    DTEX[key] = cv2; return cv2;
+  }
+  // Recadrage sur l'article selon le métier : rectangle donné par l'IA, avec une marge pour ne jamais le couper
+  function decorSrc(ph){
+    const img = photoSrc(ph), b = current.r && current.r.cadre;
+    if ($("wholeOn").checked || ph !== photos[0] || ph.video || !Array.isArray(b) || b.length !== 4) return img;
+    let [x0, y0, x1, y1] = b.map(Number);
+    if (![x0, y0, x1, y1].every(Number.isFinite) || x1 - x0 < 8 || y1 - y0 < 8 || (x1 - x0) * (y1 - y0) > 7200) return img;   // article déjà en grand : photo entière
+    const iw = srcW(img), ih = srcH(img), mx = (x1 - x0) * 0.15, my = (y1 - y0) * 0.15;
+    const L = Math.max(0, (x0 - mx) / 100 * iw), T = Math.max(0, (y0 - my) / 100 * ih), R = Math.min(iw, (x1 + mx) / 100 * iw), B = Math.min(ih, (y1 + my) / 100 * ih);
+    const key = [L, T, R, B].map(Math.round).join(",");
+    if (ph._crop && ph._cropKey === key && ph._cropImg === img) return ph._crop;
+    const c = document.createElement("canvas"); c.width = Math.round(R - L); c.height = Math.round(B - T);
+    c.getContext("2d").drawImage(img, L, T, R - L, B - T, 0, 0, c.width, c.height);
+    ph._crop = c; ph._cropKey = key; ph._cropImg = img; return c;
+  }
+  // Photo entière dans un rectangle : jamais coupée (les bords sont comblés par la même photo floutée)
+  function fitInto(x, ph, src, l, tp, w, h){
+    const iw = srcW(src), ih = srcH(src), loss = 1 - Math.min((iw / ih) / (w / h), (w / h) / (iw / ih));
+    if (loss <= 0.06){ coverInto(x, src, l, tp, w, h); return; }
+    x.save(); x.beginPath(); x.rect(l, tp, w, h); x.clip();
+    x.filter = "blur(" + Math.round(w / 40) + "px)"; coverInto(x, blurOf(ph, src), l - 30, tp - 30, w + 60, h + 60); x.filter = "none";
+    x.fillStyle = "rgba(0,0,0,.12)"; x.fillRect(l, tp, w, h);
+    const sc = Math.min(w / iw, h / ih); x.drawImage(src, l + (w - iw * sc) / 2, tp + (h - ih * sc) / 2, iw * sc, ih * sc); x.restore();
+  }
+  function drawDecor(x, F, ph, brand, t){
+    const W = F.w, H = F.h, k = W / 1080, [bgName, sup] = decorList()[decorIdx()] || DECORS.occasion[0];
+    const anim = t < DUR + 1, enter = anim ? ease(t / 0.8) : 1;
+    const bg = decorBg(bgName, W, H, F); x.drawImage(bg, 0, 0);
+    const src = decorSrc(ph), iw = srcW(src), ih = srcH(src);
+    const top = F.top - 50 * k, bottom = H - F.bottom - (H > 1500 ? 350 : 285) * k;
+    const aw = W - 2 * Math.max(40 * k, F.side - 50 * k), ah = bottom - top;
+    const fr = sup === "dore" ? 30 * k : sup === "polaroid" ? 22 * k : sup === "sol" ? 0 : 16 * k, frB = sup === "polaroid" ? 70 * k : sup === "feuille" ? 64 * k : fr;
+    const r = Math.max(0.75, Math.min(1.6, iw / ih));
+    let pw = aw - 2 * fr, ph2 = pw / r;
+    if (ph2 + fr + frB > ah){ ph2 = ah - fr - frB; pw = ph2 * r; }
+    const bw = pw + 2 * fr, bh = ph2 + fr + frB;
+    let cx = W / 2, cy = top + ah / 2;
+    if (sup === "sol"){ cy = (bg._floor || bottom) + 30 * k - bh / 2; }
+    const rot = {polaroid: -0.022, feuille: 0.02, scotch: -0.012}[sup] || 0;
+    x.save(); x.globalAlpha = enter; x.translate(cx, cy + (1 - enter) * 40 * k); x.rotate(rot);
+    const L = -bw / 2, T = -bh / 2;
+    // ombre
+    x.save(); x.shadowColor = sup === "lumineuse" ? (bgName === "nuit" ? "rgba(90,150,255,.75)" : "rgba(80,230,170,.65)") : "rgba(0,0,0,.42)";
+    x.shadowBlur = (sup === "lumineuse" ? 70 : 46) * k; x.shadowOffsetY = sup === "lumineuse" ? 0 : 22 * k;
+    const rad = sup === "arrondie" ? 52 * k : sup === "lumineuse" ? 30 * k : sup === "carte" ? 10 * k : 3 * k;
+    roundRect(x, L, T, bw, bh, rad); x.fillStyle = sup === "feuille" ? "#cda97a" : sup === "lumineuse" ? "#10182a" : "#fbf9f4"; x.fill(); x.restore();
+    if (sup === "dore"){
+      const gold = ["#7a5820", "#c49846", "#ecc878", "#b08434", "#d6b060", "#8c6428"];
+      gold.forEach((c, i) => { const s = i * fr / gold.length; x.fillStyle = c; x.fillRect(L + s, T + s, bw - 2 * s, bh - 2 * s); });
+    }
+    if (sup === "sol"){ // ombre de contact et reflet sur le parquet
+      x.save(); x.filter = "blur(" + Math.round(16 * k) + "px)"; x.fillStyle = "rgba(30,18,8,.55)"; x.beginPath(); x.ellipse(0, -T + 4 * k, bw / 2, 22 * k, 0, 0, 7); x.fill(); x.restore();
+    }
+    x.save(); roundRect(x, L + fr, T + fr, pw, ph2, sup === "arrondie" ? 38 * k : sup === "lumineuse" ? 22 * k : 2 * k); x.clip();
+    fitInto(x, ph, src, L + fr, T + fr, pw, ph2); x.restore();
+    if (sup === "sol"){
+      x.save(); x.beginPath(); x.rect(L, -T, bw, 120 * k); x.clip(); x.globalAlpha = 0.18 * enter; x.translate(0, -T * 2); x.scale(1, -1);
+      fitInto(x, ph, src, L, T, pw, ph2); x.restore();
+    }
+    if (sup === "polaroid"){ x.fillStyle = "#4a4a4a"; x.beginPath(); x.arc(0, T + 8 * k, 11 * k, 0, 7); x.fill(); }
+    if (sup === "scotch"){ x.fillStyle = "rgba(240,232,210,.82)"; [[L + 40 * k, T - 18 * k, -0.5], [L + bw - 40 * k, T - 18 * k, 0.5]].forEach(([sx, sy, a]) => { x.save(); x.translate(sx, sy + 18 * k); x.rotate(a); x.fillRect(-70 * k, -20 * k, 140 * k, 40 * k); x.restore(); }); }
+    if (sup === "lumineuse"){ x.save(); roundRect(x, L + fr, T + fr, pw, ph2, 22 * k); x.lineWidth = 3 * k; x.strokeStyle = bgName === "nuit" ? "rgba(140,190,255,.8)" : "rgba(120,240,190,.75)"; x.stroke(); x.restore(); }
+    x.restore();
+    // encre sous le titre : le texte blanc reste lisible sur un décor clair
+    const ink = DECOR_INK[bgName] || "0,0,0", gy = Math.min(bottom, H - F.bottom - 330 * k);
+    const g = x.createLinearGradient(0, gy - 40 * k, 0, H); g.addColorStop(0, "rgba(" + ink + ",0)"); g.addColorStop(0.35, "rgba(" + ink + ",.62)"); g.addColorStop(1, "rgba(" + ink + ",.9)");
+    x.fillStyle = g; x.fillRect(0, gy - 40 * k, W, H - gy + 40 * k);
+  }
   function drawLayout(x, F, ph, mode, brand, t){
+    if (mode === "decor"){ drawDecor(x, F, ph, brand, t); return; }
     const W = F.w, H = F.h, img = photoSrc(ph), iw = srcW(img), ih = srcH(img), k = W / 1080;
     const anim = t < DUR + 1, p = anim ? Math.max(0, Math.min(1, t / DUR)) : 1, enter = anim ? ease(t / 0.8) : 1;
     const z = anim ? 1.06 - 0.06 * ease(p) : 1;                      // en vidéo : léger recul de la caméra
@@ -2141,14 +2346,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       x.fillStyle = deep; x.fillRect(0, 0, W, H);
       const rg = x.createRadialGradient(W * .2, H * .1, 0, W * .2, H * .1, W * .9); rg.addColorStop(0, "rgba(255,255,255,.16)"); rg.addColorStop(1, "rgba(255,255,255,0)");
       x.fillStyle = rg; x.fillRect(0, 0, W, H);
-      const pad = 24 * k, padB = 84 * k, r = Math.max(0.75, Math.min(1.3, iw / ih));
-      const aw = W - 2 * (F.side + 30 * k), ah = bottom - top - 20 * k;
+      const pad = 16 * k, padB = 56 * k, r = Math.max(0.75, Math.min(1.45, iw / ih));
+      const aw = W - 2 * Math.max(40 * k, F.side - 40 * k), ah = bottom - top;
       const pw = Math.min(aw, (ah - pad - padB) * r + 2 * pad), inW = pw - 2 * pad, inH = inW / r;
       const ph2 = inH + pad + padB, cx = W / 2, cy = top + 10 * k + ah / 2;
-      x.save(); x.globalAlpha = enter; x.translate(cx, cy + (1 - enter) * 50 * k); x.rotate(-0.035 + (anim ? 0.01 * Math.sin(t * 0.8) : 0));
+      x.save(); x.globalAlpha = enter; x.translate(cx, cy + (1 - enter) * 50 * k); x.rotate(-0.018 + (anim ? 0.006 * Math.sin(t * 0.8) : 0));
       x.shadowColor = "rgba(0,0,0,.38)"; x.shadowBlur = 50 * k; x.shadowOffsetY = 22 * k;
       x.fillStyle = "#fff"; x.fillRect(-pw / 2, -ph2 / 2, pw, ph2); x.shadowColor = "transparent";
-      x.save(); x.beginPath(); x.rect(-pw / 2 + pad, -ph2 / 2 + pad, inW, inH); x.clip(); coverInto(x, img, -pw / 2 + pad, -ph2 / 2 + pad, inW, inH, z); x.restore();
+      x.save(); x.beginPath(); x.rect(-pw / 2 + pad, -ph2 / 2 + pad, inW, inH); x.clip(); fitInto(x, ph, img, -pw / 2 + pad, -ph2 / 2 + pad, inW, inH); x.restore();
       x.restore();
     } else {
       x.fillStyle = "#F4F1EC"; x.fillRect(0, 0, W, H);
@@ -2176,9 +2381,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       const mode = bgMode(), cut = mode !== "none" && !vid ? cutFor(ph) : null;
       if (cut){ drawStudio(x, F, ph, cut, mode, brand, t); return; }
       const img = photoSrc(ph), iw = srcW(img), ih = srcH(img);
-      const z = !vid && t < DUR ? 1 + 0.08 * (t / DUR) : 1;   // léger zoom uniquement en vidéo
+      const z = !vid && t < DUR ? 1 + 0.04 * (t / DUR) : 1;   // léger zoom uniquement en vidéo
       const ra = iw / ih, rf = W / H, loss = 1 - Math.min(ra / rf, rf / ra);
-      if (loss < 0.12){
+      if (loss < 0.05){
         const sc = Math.max(W/iw, H/ih) * z;
         x.drawImage(img, (W-iw*sc)/2, (H-ih*sc)/2, iw*sc, ih*sc);
       } else {
