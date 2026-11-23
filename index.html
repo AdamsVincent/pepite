@@ -1521,7 +1521,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   function fillEdit(){
     const {p, r} = current; if (!p || !r) return;
     $("eTitle").value = r.accroche || r.article || "";
-    const hasPrice = p.type === "nouveaute" || (p.type === "promo" && p.newPrice != null);
+    // Plusieurs articles : chaque prix se règle article par article à l'étape 2, pas de prix unique ici
+    const hasPrice = !p.multi && (p.type === "nouveaute" || (p.type === "promo" && p.newPrice != null));
     $("ePriceBox").classList.toggle("hidden", !hasPrice); $("ePrice").value = priceOf(p);
   }
   let editT = null;
