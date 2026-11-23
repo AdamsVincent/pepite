@@ -211,6 +211,13 @@ canvas{display:block; width:100%; height:auto}
 .more{margin-top:10px;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px}
 .more summary{cursor:pointer;font-weight:600;color:var(--muted)}
 .more[open] summary{margin-bottom:10px}
+.usage{background:var(--surface,#fff);border:1.5px solid var(--line,#DCD6C8);border-radius:14px;padding:10px 14px;margin:0 0 14px;font-size:15px}
+.usage.hidden{display:none}
+.usage-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700}
+.usage-row #usageTot{font-weight:400;opacity:.75}
+.usage-bar{height:8px;border-radius:99px;background:rgba(127,127,127,.2);margin-top:8px;overflow:hidden}
+.usage-bar i{display:block;height:100%;width:0;background:#2f8f5b;border-radius:99px;transition:width .4s}
+.usage.low .usage-bar i{background:#c0562a}
 </style>
 </head>
 <body>
@@ -373,6 +380,10 @@ canvas{display:block; width:100%; height:auto}
     <div class="step-head">
       <span class="step-n">2</span>
       <h2>Le post</h2>
+    </div>
+    <div class="usage hidden" id="usage" aria-live="polite">
+      <div class="usage-row"><span id="usageTxt"></span><span id="usageTot"></span></div>
+      <div class="usage-bar"><i id="usageFill"></i></div>
     </div>
     <p class="streak" id="streak"></p>
     <div class="tf hidden" id="tfBox">
@@ -767,6 +778,7 @@ canvas{display:block; width:100%; height:auto}
   }
   $("sKind").addEventListener("change", () => { applyPh($("sKind").value, true); renderIdent($("sKind").value, [], []); });
   function applyProfile(){
+    loadUsage();
     const P = prof();
     Object.assign(TYPE_LABEL, P.labels);
     const rv = (store && store.rubr) || "";
@@ -917,6 +929,19 @@ canvas{display:block; width:100%; height:auto}
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(d.error || "erreur"), {status: r.status});
     return d;
+  }
+  // Compteur de posts : le même sur tous les appareils du magasin (il vient du relais, pas du téléphone)
+  function showUsage(u){
+    if (!u || typeof u.used !== "number" || !u.limit) return;
+    const pct = Math.min(100, Math.round(100 * u.used / u.limit));
+    $("usageTxt").textContent = "Ce mois-ci : " + u.used + " / " + u.limit + " posts · " + u.restant + (u.restant > 1 ? " restants" : " restant");
+    $("usageTot").textContent = (u.total || u.used) + " créés depuis le début";
+    $("usageFill").style.width = pct + "%"; $("usage").classList.toggle("low", u.restant <= Math.max(5, u.limit * 0.1));
+    $("usage").classList.remove("hidden");
+  }
+  async function loadUsage(){
+    if (!(store && store.code && relayReady())) return;
+    try { showUsage(await relayCall({action: "usage", code: store.code})); } catch(e){}
   }
   async function shareConfig(s){
     if (!s.code || !relayReady()) return;
@@ -1272,7 +1297,7 @@ ${EVIN_RULE}
 - Dans « cadre », donne le rectangle qui entoure entièrement cet article sur la PREMIÈRE photo, en pourcentage de la largeur et de la hauteur de la photo : [gauche, haut, droite, bas], de 0 à 100, sans rien couper de l’article. Si l’article occupe presque toute la photo ou si tu n’es pas sûr, mets [0,0,100,100].
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les textes, écris les retours à la ligne sous la forme \\n) :
-{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui résume l’ensemble" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"alcool":false,"cadre":[0,0,100,100]}`;
+{"article":"nom court de l’article ou du sujet","confiance":"haute|moyenne|faible","accroche":"titre du visuel, 2 à 6 mots${p.multi ? ", qui annonce l’ensemble selon le métier, par exemple « Arrivage du jour », « Nouveautés de la semaine », « Les pépites du jour », « Nos créations du moment »" : ""}",${p.multi ? "\"articles\":[\"nom court de chaque article, 2 à 4 mots, dans l’ordre des photos\"]," : ""}"texte":"le texte du post sans les hashtags","hashtags":["#…"],"alcool":false,"cadre":[0,0,100,100]}`;
   }
 
   // ---------- Mode démo sans IA ----------
@@ -1369,6 +1394,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (result.article) add("Article : " + result.article);
     if (mode === "ia" && result.confiance) add("Identification : " + result.confiance);
     if (mode === "ia" && typeof result.restant === "number") add(result.restant + (result.restant > 1 ? " posts restants ce mois-ci" : " post restant ce mois-ci"));
+    if (mode === "ia" && typeof result.used === "number") showUsage({limit: result.limite, used: result.used, restant: result.restant, total: result.total});
     if (mode === "demo") add("Mode démo");
     $("preview").classList.add("on"); fillEdit(); $("keep").classList.remove("hidden");
     await refresh();
@@ -2117,9 +2143,11 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   const slug = () => (current.s && current.s.name ? current.s.name : "magasin").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 
   function slides(){
-    const list = [{t:"cover", ph: photos[0] || null}];
+    const mos = kind() === "carousel" && current.p && current.p.multi && photos.length > 1;
+    const list = [mos ? {t:"cover", ph: photos[0], mosaic: true} : {t:"cover", ph: photos[0] || null}];
     if (kind() === "carousel"){
-      photos.slice(1).forEach((ph, k) => list.push({t:"photo", ph, n: k + 1}));
+      if (mos) photos.slice(0, 6).forEach((ph, k) => list.push({t:"photo", ph, n: k}));
+      else photos.slice(1).forEach((ph, k) => list.push({t:"photo", ph, n: k + 1}));
       if (current.s && current.s.hours) list.push({t:"infos", ph:null});
     }
     return list;
@@ -2511,6 +2539,36 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   }
 
   // Nom (et prix) d'un article sur son image du carrousel
+  // Couverture « Plusieurs articles » : un échantillon des premiers articles, photos entières, jamais coupées
+  function drawMosaic(x, F, brand, t){
+    const W = F.w, H = F.h, k = W / 1080, list = photos.slice(0, 4), n = list.length;
+    const bgSrc = photoSrc(list[0]);
+    x.save(); x.filter = "blur(" + Math.round(40 * k) + "px) brightness(.55)"; coverInto(x, blurOf(list[0], bgSrc), -60, -60, W + 120, H + 120); x.restore();
+    x.fillStyle = "rgba(0,0,0,.25)"; x.fillRect(0, 0, W, H);
+    const top = F.top + 90 * k, bottom = H - F.bottom - (H > 1500 ? 330 : 270) * k, l = Math.max(40 * k, F.side - 50 * k), aw = W - 2 * l, ah = bottom - top, gap = 18 * k;
+    let cells;
+    if (n === 2) cells = [[0, 0, 0.5, 1], [0.5, 0, 0.5, 1]];
+    else if (n === 3) cells = [[0, 0, 0.58, 1], [0.58, 0, 0.42, 0.5], [0.58, 0.5, 0.42, 0.5]];
+    else cells = [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]];
+    cells.forEach(([cx, cy, cw, ch], i) => {
+      const ph = list[i]; if (!ph) return;
+      const a = ease((t - i * 0.15) / 0.6), cl = l + cx * aw + (cx ? gap / 2 : 0), ct = top + cy * ah + (cy ? gap / 2 : 0);
+      const w = cw * aw - (cx ? gap / 2 : 0) - (cx + cw < 0.99 ? gap / 2 : 0), h = ch * ah - (cy ? gap / 2 : 0) - (cy + ch < 0.99 ? gap / 2 : 0);
+      x.save(); x.globalAlpha = a; x.translate(0, (1 - a) * 30 * k);
+      x.shadowColor = "rgba(0,0,0,.45)"; x.shadowBlur = 30 * k; x.shadowOffsetY = 12 * k;
+      roundRect(x, cl, ct, w, h, 22 * k); x.fillStyle = "#fff"; x.fill(); x.shadowColor = "transparent";
+      roundRect(x, cl + 8 * k, ct + 8 * k, w - 16 * k, h - 16 * k, 16 * k); x.clip();
+      fitInto(x, ph, photoSrc(ph), cl + 8 * k, ct + 8 * k, w - 16 * k, h - 16 * k); x.restore();
+    });
+    if (photos.length > 4){
+      const txt = "+ " + (photos.length - 4) + " autres articles";
+      x.font = '700 ' + Math.round(34 * k) + 'px "Atkinson Hyperlegible", sans-serif'; const tw = x.measureText(txt).width + 44 * k;
+      x.fillStyle = "rgba(0,0,0,.6)"; roundRect(x, W - l - tw, bottom + 14 * k, tw, 56 * k, 28 * k); x.fill();
+      x.fillStyle = "#fff"; x.textBaseline = "middle"; x.fillText(txt, W - l - tw + 22 * k, bottom + 42 * k); x.textBaseline = "alphabetic";
+    }
+    const g = x.createLinearGradient(0, bottom, 0, H); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.4, "rgba(0,0,0,.55)"); g.addColorStop(1, "rgba(0,0,0,.8)");
+    x.fillStyle = g; x.fillRect(0, bottom, W, H - bottom);
+  }
   function drawItemLabel(x, F, n){
     const {p, r} = current, W = F.w, H = F.h, tall = H > 1500;
     const it = (p.items || [])[n] || {}, name = it.name || ((r && r.articles) || [])[n] || "", price = it.price ? normPrice(it.price) : "";
@@ -2566,7 +2624,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     }
 
     // Couverture
-    drawBg(x, F, slide.ph, brand, t);
+    if (slide.mosaic) drawMosaic(x, F, brand, t); else drawBg(x, F, slide.ph, brand, t);
     const clean = s.clean === "clean";
     x.globalAlpha = ease((t - 0.2) / 0.4);
     if (!clean) drawPill(x, F.side, F.top, label, tcolor);
