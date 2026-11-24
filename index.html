@@ -942,6 +942,7 @@ canvas{display:block; width:100%; height:auto}
   async function loadUsage(){
     if (!(store && store.code && relayReady())) return;
     try { showUsage(await relayCall({action: "usage", code: store.code})); } catch(e){}
+    setTimeout(() => { if (typeof syncHist === "function") syncHist(); }, 0);
   }
   async function shareConfig(s){
     if (!s.code || !relayReady()) return;
@@ -1397,8 +1398,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (mode === "ia" && typeof result.used === "number") showUsage({limit: result.limite, used: result.used, restant: result.restant, total: result.total});
     if (mode === "demo") add("Mode démo");
     $("preview").classList.add("on"); fillEdit(); $("keep").classList.remove("hidden");
-    await refresh();
     addHist(p, result, $("caption").value);
+    await refresh();
     $("preview").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
     busy = false; $("generate").disabled = false;
   };
@@ -1719,7 +1720,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     pub("Post rangé dans « Mes posts prêts », en haut de l’étape 2 : publie-le quand tu veux.");
   };
 
-  // ---------- Historique (gardé sur ce téléphone) ----------
+  // ---------- Historique (sur ce téléphone et sur le relais, partagé entre appareils) ----------
   const HKEY = "arrivage-historique";
   const loadHist = () => { try { return JSON.parse(localStorage.getItem(HKEY) || "[]"); } catch(e){ return []; } };
   function saveHist(list){
@@ -1734,8 +1735,33 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   }
   function addHist(p, r, caption){
     const list = loadHist();
-    list.unshift({id: Date.now(), date: new Date().toISOString(), p, r, caption, photo: photos[0] ? thumbData(photos[0].img, 900) : null});
+    let photo = null;
+    try { photo = photos[0] ? thumbData(photos[0].img, 640) : null; } catch(e){}
+    const entry = {id: Date.now(), date: new Date().toISOString(), p, r, caption, photo};
+    list.unshift(entry);
     saveHist(list.slice(0, 20)); renderHist();
+    histRemote("histAdd", {entry}, entry.id);
+  }
+  // Historique partagé : le même sur tous les appareils du magasin (gardé sur le relais avec le code magasin)
+  function histRemote(action, extra, id){
+    if (!(store && store.code && relayReady())) return;
+    relayCall(Object.assign({action, code: store.code}, extra)).then(() => {
+      if (action === "histAdd") saveHist(loadHist().map(x => x.id === id ? Object.assign(x, {synced:true}) : x));
+    }).catch(() => {});
+  }
+  async function syncHist(){
+    if (!(store && store.code && relayReady())) return;
+    try {
+      const d = await relayCall({action:"histGet", code: store.code});
+      if (!Array.isArray(d.list)) return;
+      const remote = d.list, ids = new Set(remote.map(x => x.id));
+      // Posts faits ici et jamais envoyés (ancienne version, réseau coupé) : on les envoie maintenant
+      const local = loadHist().filter(x => !ids.has(x.id) && !x.synced);
+      for (const entry of local.slice(0, 20)){ try { await relayCall({action:"histAdd", code: store.code, entry}); } catch(e){} }
+      const merged = remote.concat(local).map(x => Object.assign(x, {synced:true}))
+        .sort((a, b) => b.id - a.id).slice(0, 20);
+      saveHist(merged); renderHist();
+    } catch(e){}
   }
   const imgFromData = (d) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = d; });
   async function setPhotoFromData(d){
@@ -1761,6 +1787,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
   }
   async function markSold(e){
     saveHist(loadHist().map(x => x.id === e.id ? Object.assign(x, {sold:true}) : x)); renderHist();
+    histRemote("histUpdate", {id: e.id, patch: {sold: true}});
     setMode("one");
     await setPhotoFromData(e.photo);
     setRadio("ptype", "vendu"); applyType();
@@ -1797,7 +1824,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
       mk("Republier", "", () => reuse(e));
       if (e.p.type !== "vendu" && e.p.type !== "info") mk("Vendu !", "sold", () => markSold(e));
       if ((e.p.type === "nouveaute" || e.p.type === "promo") && !e.sold && Date.now() - new Date(e.date).getTime() > 7 * 864e5) mk("Relancer", "", () => relaunch(e));
-      mk("×", "", () => { saveHist(loadHist().filter(x => x.id !== e.id)); renderHist(); }, "Supprimer de l’historique");
+      mk("×", "", () => { saveHist(loadHist().filter(x => x.id !== e.id)); renderHist(); histRemote("histDel", {id: e.id}); }, "Supprimer de l’historique");
       it.append(th, tx, ac); box.append(it);
     });
   }
@@ -3056,6 +3083,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
           if (!cache[name]) throw new Error("prep");
           const pre = staged.get(cache[name]), got = pre ? await pre : null;
           media[name] = got ? {mime: "image/jpeg", urls: got} : {mime: "image/jpeg", files: await Promise.all(cache[name].map(toB64))};
+          // Story : une seule image (la 1re, la couverture du carrousel). Facebook refuse plusieurs images en story.
+          if (name.startsWith("story")){ if (media[name].urls) media[name].urls = media[name].urls.slice(0, 1); if (media[name].files) media[name].files = media[name].files.slice(0, 1); }
         }
       }
       btn.textContent = "Publication en cours…";
