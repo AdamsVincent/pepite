@@ -218,6 +218,66 @@ canvas{display:block; width:100%; height:auto}
 .usage-bar{height:8px;border-radius:99px;background:rgba(127,127,127,.2);margin-top:8px;overflow:hidden}
 .usage-bar i{display:block;height:100%;width:0;background:#2f8f5b;border-radius:99px;transition:width .4s}
 .usage.low .usage-bar i{background:#c0562a}
+/* ===== Thème « réseaux sociaux » : habillage seulement, même ordre et mêmes boutons ===== */
+:root{
+  --grad:linear-gradient(45deg,#F58529 0%,#DD2A7B 45%,#8134AF 75%,#515BD4 100%);
+  --grad-soft:linear-gradient(135deg,#FFF1E6 0%,#FDE7F1 50%,#EEE9FB 100%);
+  --pink:#DD2A7B; --paper:#FAF6F4; --line:#ECE4E6;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --paper:#0F1220; --line:#2B2F45; --grad-soft:linear-gradient(135deg,#2A1A22 0%,#24182E 100%); } }
+:root[data-theme="dark"]{ --paper:#0F1220; --line:#2B2F45; --grad-soft:linear-gradient(135deg,#2A1A22 0%,#24182E 100%); }
+body{background:var(--paper)}
+header{padding-bottom:22px}
+header::after{content:""; display:block; height:4px; width:84px; border-radius:4px; background:var(--grad); margin-top:16px}
+.appicon{box-shadow:0 0 0 3px var(--paper),0 0 0 6px #DD2A7B,0 10px 24px rgba(129,52,175,.35)}
+section{border:0; border-radius:26px; box-shadow:0 8px 28px rgba(60,20,70,.08),0 1px 2px rgba(60,20,70,.06)}
+.step-n{width:34px; height:34px; font-size:16px; background:var(--grad); color:#fff; box-shadow:0 0 0 3px var(--surface),0 0 0 5px rgba(221,42,123,.25); transform:translateY(6px)}
+.step-head h2{font-size:25px; letter-spacing:-.01em}
+input[type=text],input[type=date],input[type=url],input[type=password],select,textarea{border-radius:14px; border-color:var(--line)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--pink); outline-offset:1px}
+.chips label{border-color:var(--line); padding:9px 16px}
+.chips input:checked + label,.seg input:checked + label,.tabs button[aria-pressed="true"]{background:var(--grad); color:#fff; border-color:transparent; box-shadow:0 4px 12px rgba(221,42,123,.28)}
+.types label{border-radius:20px; border:2px solid var(--line); padding:14px 8px}
+.types input:checked + label{border:2px solid transparent; box-shadow:0 6px 16px rgba(221,42,123,.18); background:linear-gradient(var(--field),var(--field)) padding-box,var(--grad) border-box}
+.types label b{font-size:18px}
+.drop{border:2px dashed #F2B8D0; background:var(--grad-soft); border-radius:20px}
+.drop .thumb{border-radius:16px; background-color:#fff}
+.seg label{border-radius:16px}
+.btn{border-radius:16px; background:var(--grad); color:#fff; box-shadow:0 6px 16px rgba(221,42,123,.28)}
+.btn.big{border-radius:18px; font-size:18px; padding:17px}
+.btn.ghost{background:var(--field); color:var(--ink); border:1.5px solid var(--line); box-shadow:none}
+.mini{border-radius:999px}
+.pubrow.done{background:#2F8F5B; box-shadow:none}
+button.link{color:var(--pink)}
+.canvas-wrap{border-radius:0; border:0}
+.usage{border-radius:18px}
+/* aperçu présenté comme un post */
+.igpost{background:var(--surface); border:1px solid var(--line); border-radius:22px; overflow:hidden; box-shadow:0 10px 30px rgba(60,20,70,.10)}
+.ighead{display:flex; align-items:center; gap:10px; padding:10px 12px}
+.igava{width:36px; height:36px; border-radius:50%; padding:2px; background:var(--grad); flex:none}
+.igava i{display:grid; place-items:center; width:100%; height:100%; border-radius:50%; background:var(--surface); border:2px solid var(--surface); font-style:normal; font-weight:800; font-size:14px; color:var(--ink); background-size:cover; background-position:center}
+.ighead b{font-size:14px; line-height:1.1; display:block}
+.ighead small{font-size:12px; color:var(--muted)}
+.ighead .dots{margin-left:auto; color:var(--muted); font-size:20px; letter-spacing:1px}
+.igact{display:flex; gap:16px; align-items:center; padding:10px 14px 4px}
+.igact svg{width:26px; height:26px}
+.igact .sv{margin-left:auto}
+.iglike{padding:2px 14px 12px; font-size:13.5px; color:var(--muted)}
+
+/* Fond clair : taches de couleur floues */
+body{position:relative}
+body::before{content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+ background:radial-gradient(420px 360px at 8% 6%,rgba(245,133,41,.30),transparent 70%),
+            radial-gradient(460px 400px at 100% 30%,rgba(221,42,123,.24),transparent 70%),
+            radial-gradient(520px 420px at 10% 85%,rgba(129,52,175,.20),transparent 70%),
+            radial-gradient(420px 380px at 95% 100%,rgba(81,91,212,.20),transparent 70%)}
+/* Mode nuit (réglage du téléphone) : fond prune et halos rose et bleu */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body{background:#14101F}
+  :root:not([data-theme="light"]) body::before{background:radial-gradient(500px 420px at 0% 0%,rgba(221,42,123,.35),transparent 70%),radial-gradient(520px 460px at 100% 100%,rgba(81,91,212,.35),transparent 70%)} }
+:root[data-theme="dark"] body{background:#14101F}
+:root[data-theme="dark"] body::before{background:radial-gradient(500px 420px at 0% 0%,rgba(221,42,123,.35),transparent 70%),radial-gradient(520px 460px at 100% 100%,rgba(81,91,212,.35),transparent 70%)}
+.igpost:has(.canvas-wrap.tall){max-width:340px; margin-left:auto; margin-right:auto}
+.igpost .canvas-wrap.tall{max-width:none}
 </style>
 </head>
 <body>
@@ -592,7 +652,12 @@ canvas{display:block; width:100%; height:auto}
     </div>
     <p class="hintline" id="bgHint"></p>
     <div class="tabs" id="tabs"></div>
-    <div class="canvas-wrap" id="cvWrap"><canvas id="cv" width="1080" height="1350" role="img" aria-label="Aperçu du visuel"></canvas></div>
+    <div class="igpost">
+      <div class="ighead"><span class="igava"><i id="igAva">P</i></span><div><b id="igName">Votre magasin</b><small id="igCity"></small></div><span class="dots" aria-hidden="true">•••</span></div>
+      <div class="canvas-wrap" id="cvWrap"><canvas id="cv" width="1080" height="1350" role="img" aria-label="Aperçu du visuel"></canvas></div>
+      <div class="igact" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 3 11 13"/><path d="M22 3l-7 18-4-8-8-4 18-6z"/></svg><span class="sv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span></div>
+      <div class="iglike">Aperçu de votre post</div>
+    </div>
     <div class="slidenav hidden" id="slideNav">
       <button type="button" id="prevS" aria-label="Image précédente">‹</button>
       <span id="slideInfo"></span>
@@ -785,8 +850,18 @@ canvas{display:block; width:100%; height:auto}
     });
   }
   $("sKind").addEventListener("change", () => { applyPh($("sKind").value, true); renderIdent($("sKind").value, [], []); });
+  // En-tête de l'aperçu façon post : rond du magasin (logo ou initiale), nom et ville
+  function igFill(){
+    const st = store || {};
+    $("igName").textContent = st.name || "Votre magasin";
+    $("igCity").textContent = st.city || "";
+    const a = $("igAva");
+    if (logoData){ a.textContent = ""; a.style.backgroundImage = "url(" + logoData + ")"; a.style.backgroundSize = "contain"; a.style.backgroundRepeat = "no-repeat"; a.style.backgroundColor = "#fff"; }
+    else { a.style.backgroundImage = ""; a.textContent = (st.name || "P").trim().charAt(0).toUpperCase(); }
+  }
   function applyProfile(){
     loadUsage();
+    try { igFill(); } catch(e){}
     const P = prof();
     Object.assign(TYPE_LABEL, P.labels);
     const rv = (store && store.rubr) || "";
