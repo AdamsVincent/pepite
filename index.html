@@ -309,7 +309,14 @@ canvas{display:block; width:100%; height:auto}
       <label for="sHours">Horaires et adresse <span class="hint">(repris en fin de post)</span></label>
       <input type="text" id="sHours" placeholder="Ex. Du mardi au samedi, 10 h – 19 h · 12 rue des Lilas">
       <label for="sCode">Code d’accès <span class="hint">(fourni par Adams Partners, il active l’IA)</span></label>
-      <input type="text" id="sCode" autocomplete="off" autocapitalize="characters" placeholder="Ex. BERGERAC-7F3K">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="sCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex. BERGERAC-7F3K" style="flex:1">
+        <button class="link hidden" id="codeUnlock" type="button" style="white-space:nowrap">🔒 Modifier</button>
+      </div>
+      <div id="codeAdminBox" class="hidden" style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <input type="password" id="codeAdmin" autocomplete="off" spellcheck="false" placeholder="Code administrateur Adams Partners" style="flex:1">
+        <button class="link" id="codeAdminOk" type="button">Déverrouiller</button>
+      </div>
       <button class="link" id="fetchCfg" type="button">Déjà paramétré par un collègue ? Récupérer les réglages du magasin</button>
       <label>On s’adresse aux clients en…</label>
       <div class="chips" role="radiogroup" aria-label="Tutoiement ou vouvoiement">
@@ -456,7 +463,7 @@ canvas{display:block; width:100%; height:auto}
 
     <!-- Promo -->
     <div data-for="promo" class="hidden">
-      <label for="prWhat">Ce qui est en promo</label>
+      <label for="prWhat">Ce qui est en promo <span class="hint">(facultatif avec une photo : l’IA reconnaît l’article)</span></label>
       <input type="text" id="prWhat" placeholder="Ex. bergère en velours, ou tout le rayon vaisselle">
       <label for="prBase">Prix de base <span class="hint" id="prBaseH">(facultatif pour une promo sur tout un rayon)</span></label>
       <input type="text" id="prBase" inputmode="decimal" placeholder="Ex. 79 €">
@@ -471,10 +478,11 @@ canvas{display:block; width:100%; height:auto}
           <input type="text" id="prVal" inputmode="decimal" placeholder="Ex. 30">
         </div>
         <div>
-          <label for="prUntil">Jusqu’au</label>
+          <label for="prUntil">Jusqu’au <span class="hint">(facultatif)</span></label>
           <input type="text" id="prUntil" placeholder="Ex. samedi soir">
         </div>
       </div>
+      <p class="hint" style="margin-top:6px">Pas de date de fin ? Laissez vide : le post annonce une baisse de prix, sans durée.</p>
       <p class="status" id="prCalc" aria-live="polite"></p>
     </div>
 
@@ -882,6 +890,7 @@ canvas{display:block; width:100%; height:auto}
   function fillSetup(s){
     if (s.tone){ setRadio("ptone", styleOf(s.tone)); setRadio("paddr", addrOf(s.tone)); }
     $("sName").value = s.name || ""; $("sCity").value = s.city || ""; $("sHours").value = s.hours || ""; $("sCode").value = s.code || "";
+    try { lockCode(); } catch(e){ setTimeout(() => { try { lockCode(); } catch(_){} }, 0); }
     $("sTags").value = s.tags || ""; if (s.tone){ setRadio("tone", styleOf(s.tone)); setRadio("addr", addrOf(s.tone)); } if (s.emoji) setRadio("emoji", s.emoji);
     setLogo(s.logo || null);
     $("sKind").value = s.kind || "occasion";
@@ -917,12 +926,37 @@ canvas{display:block; width:100%; height:auto}
     try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
     collapseSetup();
     shareConfig(s);
-    if (s.code) try { history.replaceState(null, "", "#" + s.code); } catch(e){}
+    if (s.code) setLink(s.code);
+    lockCode();
     $("compose").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
   };
 
   // ---------- Réglages partagés par toute l'équipe du magasin ----------
   // Tous les vendeurs d'un magasin utilisent le même code : les réglages sont gardés en ligne, sans limite d'utilisateurs.
+  // Code d'accès dans le lien : affiché sous une forme brouillée (#!…) pour ne pas apparaître en clair
+  // dans la barre d'adresse ni sur une capture. Ce n'est pas un chiffrement : la vraie protection reste côté relais.
+  const LK = "pepite-adams";
+  function linkTok(c){
+    const x = [...String(c)].map((ch, i) => String.fromCharCode(ch.charCodeAt(0) ^ LK.charCodeAt(i % LK.length))).join("");
+    return "!" + btoa(x).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function untok(t){
+    try {
+      const b = t.slice(1).replace(/-/g, "+").replace(/_/g, "/");
+      const x = atob(b + "===".slice((b.length + 3) % 4));
+      const c = [...x].map((ch, i) => String.fromCharCode(ch.charCodeAt(0) ^ LK.charCodeAt(i % LK.length))).join("").toUpperCase();
+      return /^[A-Z0-9][A-Z0-9-]{3,40}$/.test(c) ? c : "";
+    } catch(e){ return ""; }
+  }
+  function setLink(code){ if (code) try { history.replaceState(null, "", "#" + linkTok(code)); } catch(e){} }
+  // Code d'accès masqué et verrouillé une fois enregistré : seul le code administrateur permet de le changer
+  function lockCode(){
+    const has = !!(store && store.code);
+    $("sCode").type = has ? "password" : "text";
+    $("sCode").readOnly = has;
+    $("codeUnlock").classList.toggle("hidden", !has);
+    $("codeAdminBox").classList.add("hidden"); $("codeAdmin").value = "";
+  }
   async function relayCall(payload){
     if (!relayReady()) throw new Error("relais non configuré");
     const r = await fetch(RELAY_URL, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
@@ -958,18 +992,31 @@ canvas{display:block; width:100%; height:auto}
       store = s; fillSetup(s); applyProfile();
       try { localStorage.setItem("arrivage-store", JSON.stringify(s)); } catch (e) {}
       collapseSetup(); if (!silent) $("setupMsg").textContent = "Réglages du magasin récupérés.";
-      try { history.replaceState(null, "", "#" + code); } catch(e){}
+      setLink(code);
       return true;
     } catch (e) {
       if (!silent) $("setupMsg").textContent = e.status === 401 ? "Code d’accès invalide." : "Impossible de récupérer les réglages pour l’instant.";
       return false;
     }
   }
+  $("codeUnlock").onclick = () => { $("codeAdminBox").classList.remove("hidden"); $("codeAdmin").focus(); };
+  $("codeAdminOk").onclick = async () => {
+    const admin = $("codeAdmin").value.trim();
+    if (!admin){ $("codeAdmin").focus(); return; }
+    try {
+      await relayCall({action: "adminCheck", code: (store && store.code) || $("sCode").value.trim(), admin});
+      $("codeAdminBox").classList.add("hidden"); $("codeAdmin").value = "";
+      $("sCode").readOnly = false; $("sCode").type = "text"; $("codeUnlock").classList.add("hidden"); $("sCode").focus();
+      $("setupMsg").textContent = "Code déverrouillé : modifiez-le puis enregistrez.";
+    } catch(e){ $("setupMsg").textContent = e.status === 403 ? "Code administrateur incorrect." : "Vérification impossible pour le moment."; }
+  };
   $("fetchCfg").onclick = () => { const c = $("sCode").value.trim(); if (!c){ $("sCode").focus(); $("setupMsg").textContent = "Saisis d’abord le code du magasin."; return; } pullConfig(c, false); };
   // Lien personnel : adamsvincent.github.io/pepite/#CODE arrive déjà paramétré
   setTimeout(() => {
-    const h = decodeURIComponent((location.hash || "").slice(1)).trim().toUpperCase();
-    const linkCode = (/^[A-Z0-9][A-Z0-9-]{3,40}$/.test(h) && h !== "MENTIONS") ? h : "";
+    const raw = decodeURIComponent((location.hash || "").slice(1)).trim();
+    const h = raw.toUpperCase();
+    const linkCode = raw.startsWith("!") ? untok(raw) : (/^[A-Z0-9][A-Z0-9-]{3,40}$/.test(h) && h !== "MENTIONS") ? h : "";
+    if (linkCode) setLink(linkCode);   // un ancien lien en clair est aussitôt remplacé par la forme brouillée
     if (linkCode && (!store || store.code !== linkCode)){
       // Nouveau code sur ce téléphone : on repart d'une fiche vierge, jamais des réglages d'un autre magasin
       store = {code: linkCode, tone: "chaleureux et proche, on tutoie", emoji: "quelques-uns", color: "#1B2A4A", kind: "occasion"};
@@ -980,7 +1027,7 @@ canvas{display:block; width:100%; height:auto}
     }
     else if (store && store.code){
       pullConfig(store.code, true);
-      if (!linkCode) try { history.replaceState(null, "", "#" + store.code); } catch(e){}
+      if (!linkCode) setLink(store.code);
     }
   }, 0);
 
@@ -988,7 +1035,7 @@ canvas{display:block; width:100%; height:auto}
   function applyType(){
     const t = radioVal("ptype");
     document.querySelectorAll("[data-for]").forEach(el => el.classList.toggle("hidden", el.dataset.for !== t));
-    $("photoHint").textContent = t === "nouveaute" ? "(l’article est identifié à partir de la photo)" : t === "vendu" ? "(la photo de l’article vendu)" : "(facultatif)";
+    $("photoHint").textContent = t === "nouveaute" ? "(l’article est identifié à partir de la photo)" : t === "vendu" ? "(la photo de l’article vendu)" : t === "promo" ? "(l’article en promo est reconnu sur la photo si vous ne le décrivez pas)" : "(facultatif)";
   }
   document.querySelectorAll('input[name="ptype"]').forEach(r => r.addEventListener("change", applyType));
   document.querySelectorAll('input[name="ptype"]').forEach(r => r.addEventListener("change", () => renderMulti()));
@@ -1260,7 +1307,7 @@ canvas{display:block; width:100%; height:auto}
     const fact = isFact(p, s);
     const typeDesc = {
       nouveaute: `Post « ${TYPE_LABEL.nouveaute} » : ${prof().newDesc}. Produit saisi par le commerçant : ${p.item || "(non saisi, identifie-le sur la photo)"}. Prix : ${p.price ? normPrice(p.price) : "(non communiqué, n’en invente pas, invite à passer)"}.${prof().state ? " État : " + p.state + "." : ""} Précision : ${p.note || "aucune"}.`,
-      promo: `Post « promo ». Ce qui est en promo : ${p.what || "(non précisé)"}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. Jusqu’au : ${p.until || "(non précisé)"}. Utilise exactement ces montants, n’en calcule pas d’autres.`,
+      promo: `Post « promo ». Ce qui est en promo : ${p.what || (photoBlob ? "(non saisi, identifie-le sur la photo)" : "une sélection d’articles du magasin")}. Prix de base : ${p.base != null ? euro(p.base) : "(non précisé)"}. Nouveau prix : ${p.newPrice != null ? euro(p.newPrice) : "(non précisé)"}. Remise : ${p.pct != null ? "-" + p.pct + " %" : "(non précisée)"}. ${p.until ? "Jusqu’au : " + p.until + "." : "Aucune date de fin : c’est une baisse de prix sans durée annoncée. N’invente aucune date ni durée, n’écris pas « jusqu’à… », « dernier jour » ni « offre limitée » ; parle simplement de prix en baisse."} Utilise exactement ces montants, n’en calcule pas d’autres.`,
       vendu: `Post « ${TYPE_LABEL.vendu} » : ${prof().soldDesc} Produit : ${p.item || "(non saisi, identifie-le sur la photo)"}. Parti en : ${p.delay || "(non précisé, n’invente pas de délai)"}. Accroche courte et festive.`,
       info: `Post « info magasin ». Sujet : ${p.topic}. Détails : ${p.detail || "aucun"}.`
     }[p.type];
@@ -1340,7 +1387,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     } else if (p.type === "promo"){
       article = p.what || "Promo";
       accroche = (p.pct !== null ? "-" + p.pct + " % " : "") + (p.what ? p.what.split(" ").slice(0,3).join(" ") : "en magasin");
-      texte = `${em("🔥 ")}Prix cassés chez ${s.name} !\n${p.newPrice !== null ? (p.what || "Sélection") + " à " + euro(p.newPrice) + (p.base !== null ? " au lieu de " + euro(p.base) : "") + (p.pct !== null ? " (-" + p.pct + " %)" : "") : (p.pct !== null ? "-" + p.pct + " %" : "Remise") + " sur " + (p.what || "une sélection d’articles")}${p.until ? ", jusqu’à " + p.until : ""}.\nLes bonnes affaires ne restent jamais longtemps : ${tu ? "viens en profiter" : "venez en profiter"}${em(" 🏃")}${end}`;
+      texte = `${em("🔥 ")}Prix cassés chez ${s.name} !\n${p.newPrice !== null ? (p.what || "Sélection") + " à " + euro(p.newPrice) + (p.base !== null ? " au lieu de " + euro(p.base) : "") + (p.pct !== null ? " (-" + p.pct + " %)" : "") : (p.pct !== null ? "-" + p.pct + " %" : "Remise") + " sur " + (p.what || "une sélection d’articles")}${p.until ? ", jusqu’à " + p.until : ""}.\n${p.until ? "Les bonnes affaires ne restent jamais longtemps" : "C’est le moment d’en profiter"} : ${tu ? "viens en profiter" : "venez en profiter"}${em(" 🏃")}${end}`;
     } else if (p.type === "vendu"){
       article = p.item || "Article vendu";
       accroche = "Déjà parti !";
@@ -1367,7 +1414,8 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour (dans les texte
     if (p.type === "nouveaute" && !photoBlob && !p.item) { setStatus("Ajoute une photo ou le nom de l’article.", true); return; }
     if (p.type === "vendu" && !photoBlob && !p.item) { setStatus("Ajoute la photo ou le nom de l’article vendu.", true); return; }
     if (p.type === "promo" && p.err) { setStatus(p.err, true); return; }
-    if (p.type === "promo" && (!p.what || !p.tag)) { setStatus("Indique ce qui est en promo et la remise (en % ou en nouveau prix).", true); return; }
+    if (p.type === "promo" && !p.tag) { setStatus("Indique la remise (en % ou en nouveau prix).", true); return; }
+    if (p.type === "promo" && !p.what && !photoBlob) { setStatus("Ajoute une photo de l’article en promo, ou écris ce qui est en promo.", true); return; }
 
     busy = true; $("generate").disabled = true;
     if (bgMode() === "decor") nextDecor();
